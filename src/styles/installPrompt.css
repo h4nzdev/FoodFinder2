@@ -1,50 +1,181 @@
-.install-modal::backdrop {
-  background: rgba(28, 13, 54, 0.55);
-  backdrop-filter: blur(3px);
-  animation: install-fade 200ms ease;
-}
+/* ==========================================================================
+   FoodFinder PWA Install Recommendation Modal
+   ========================================================================== */
 
-.install-modal {
+.install-backdrop {
   position: fixed;
   inset: 0;
-  margin: auto;
-  width: min(380px, calc(100% - 32px));
-  max-height: calc(100dvh - 32px);
+  z-index: 5000;
+  background: rgba(28, 13, 54, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
   overflow-y: auto;
-  border: 0;
-  padding: 26px 22px 20px;
-  border-radius: 22px;
+  animation: install-fade 220ms ease;
+  overscroll-behavior: contain;
+}
+
+.install-modal-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: auto;
+  padding: 10px 0;
+}
+
+.install-modal-card {
+  position: relative;
+  width: min(390px, 100%);
+  border-radius: 24px;
   background: var(--color-surface, #f7f5fc);
+  border: 1px solid rgba(255, 255, 255, 0.85);
   border-top: 4px solid #f59e0b;
-  box-shadow: 0 24px 50px rgba(28, 13, 54, 0.35);
+  box-shadow: 0 24px 50px rgba(28, 13, 54, 0.45);
+  padding: 26px 20px 22px;
   text-align: center;
-  animation: install-pop 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: install-pop 340ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .install-close {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 12px;
+  right: 12px;
   border: none;
   background: transparent;
   color: #2d1654;
   cursor: pointer;
   padding: 6px;
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 8px;
+  transition: background-color 120ms ease;
 }
-.install-close:focus-visible { outline: 2px solid #f59e0b; }
 
-.install-icon { border-radius: 18px; box-shadow: 0 8px 18px rgba(45, 22, 84, 0.25); }
-.install-title { font-family: var(--font-serif, Georgia, serif); color: #2d1654; font-size: 1.4rem; margin: 12px 0 4px; }
-.install-copy { font-size: 0.86rem; color: var(--color-secondary, #6b5b8a); margin: 0 0 14px; }
+.install-close:hover {
+  background: rgba(45, 22, 84, 0.08);
+}
 
-.install-ios { font-size: 0.82rem; color: #2d1654; background: rgba(245, 158, 11, 0.14); padding: 10px; border-radius: 10px; margin-bottom: 14px; }
-.install-ios svg { vertical-align: -2px; }
+.install-close:focus-visible {
+  outline: 2px solid #f59e0b;
+}
 
-.install-actions { display: flex; gap: 8px; justify-content: center; }
-.install-actions .btn-editorial { flex: 1; justify-content: center; white-space: nowrap; }
+.install-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
 
-@keyframes install-fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes install-pop { from { opacity: 0; transform: translateY(24px) scale(0.92); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .install-modal::backdrop, .install-modal { animation: none; } }
+.install-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  box-shadow: 0 8px 20px rgba(45, 22, 84, 0.28);
+  border: 2px solid rgba(245, 158, 11, 0.5);
+}
+
+.install-title {
+  font-family: var(--font-serif, Georgia, serif);
+  color: #2d1654;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+  letter-spacing: 0.01em;
+}
+
+.install-copy {
+  font-size: 0.86rem;
+  color: var(--color-secondary, #6b5b8a);
+  margin: 0 0 16px;
+  line-height: 1.4;
+}
+
+/* Feature Perks List */
+.install-perks {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.install-perks li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #2d1654;
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: #efebf7;
+  line-height: 1.35;
+}
+
+.install-perks svg {
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.install-ios {
+  font-size: 0.82rem;
+  color: #2d1654;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 10px 12px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.install-ios svg {
+  vertical-align: -2px;
+  color: #2d1654;
+}
+
+.install-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.install-actions .btn-editorial {
+  flex: 1;
+  justify-content: center;
+  white-space: nowrap !important;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+}
+
+@keyframes install-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes install-pop {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .install-backdrop,
+  .install-modal-card {
+    animation: none !important;
+  }
+}

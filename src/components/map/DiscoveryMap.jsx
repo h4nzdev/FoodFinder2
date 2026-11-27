@@ -498,13 +498,12 @@ export default function DiscoveryMap({
         className="editorial-leaflet-map"
       >
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          subdomains="abcd"
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           minZoom={10}
           maxZoom={20}
-          maxNativeZoom={19}
-          keepBuffer={8}
+          maxNativeZoom={18}
+          keepBuffer={6}
           updateWhenZooming={false}
           className="editorial-map-tiles"
         />

@@ -81,6 +81,7 @@ export async function submitOsmClaim({ restaurantId, restaurantName, evidence })
       ...identity,
       restaurant_name: String(restaurantName || '').trim(),
       evidence: cleanEvidence,
+      status: 'approved',
     })
     .select(CLAIM_FIELDS)
     .single();

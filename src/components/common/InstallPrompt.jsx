@@ -36,10 +36,9 @@ export default function InstallPrompt() {
   const [open, setOpen] = useState(false);
   const [hasNativePrompt, setHasNativePrompt] = useState(false);
   const deferredPrompt = useRef(null);
-  const dialogRef = useRef(null);
 
   useEffect(() => {
-    // Expose global trigger for manual testing or header/sidebar install button
+    // Expose global trigger for manual testing or header install button
     if (typeof window !== 'undefined') {
       window.showFoodFinderInstallPrompt = () => setOpen(true);
     }
@@ -74,15 +73,16 @@ export default function InstallPrompt() {
     };
   }, []);
 
+  // Close on Escape key
   useEffect(() => {
     if (!open) return undefined;
-    const dialog = dialogRef.current;
-    if (dialog && !dialog.open) {
-      dialog.showModal();
-    }
-    return () => {
-      if (dialog?.open) dialog.close();
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        dismiss();
+      }
     };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open]);
 
   const dismiss = () => {
@@ -116,106 +116,103 @@ export default function InstallPrompt() {
   const ios = isIos();
 
   return (
-    <dialog
-      ref={dialogRef}
-      className="install-modal"
-      aria-labelledby="install-title"
-      aria-describedby="install-copy"
-      onCancel={dismiss}
-      onClick={(event) => {
-        if (event.target !== event.currentTarget) return;
-        const rect = event.currentTarget.getBoundingClientRect();
-        if (
-          event.clientX < rect.left ||
-          event.clientX > rect.right ||
-          event.clientY < rect.top ||
-          event.clientY > rect.bottom
-        ) {
-          dismiss();
-        }
-      }}
-    >
-      <button
-        type="button"
-        className="install-close"
-        aria-label="Close install recommendation"
-        onClick={dismiss}
+    <div className="install-backdrop" onClick={dismiss}>
+      <div
+        className="install-modal-container"
+        onClick={(event) => event.stopPropagation()}
       >
-        <X size={18} aria-hidden="true" />
-      </button>
-
-      <img
-        src="/pwa-192.png"
-        alt="FoodFinder Icon"
-        className="install-icon"
-        width="68"
-        height="68"
-      />
-
-      <h2 id="install-title" className="install-title">
-        Install FoodFinder
-      </h2>
-
-      <p className="install-copy" id="install-copy">
-        Add FoodFinder to your home screen for the fastest full-screen Cebu City food map.
-      </p>
-
-      <ul className="install-perks">
-        <li>
-          <Zap size={14} aria-hidden="true" />
-          <span>Opens instantly like a native mobile app</span>
-        </li>
-        <li>
-          <Smartphone size={14} aria-hidden="true" />
-          <span>Full-screen map navigation with zero browser bars</span>
-        </li>
-        <li>
-          <WifiOff size={14} aria-hidden="true" />
-          <span>App shell cached offline for quick reloads</span>
-        </li>
-      </ul>
-
-      {ios ? (
-        <div className="install-ios">
-          In Safari, tap <Share size={14} aria-hidden="true" /> <strong>Share</strong>, then scroll
-          and tap <strong>Add to Home Screen</strong>.
-        </div>
-      ) : !hasNativePrompt ? (
-        <div className="install-ios">
-          <MonitorSmartphone size={14} aria-hidden="true" style={{ verticalAlign: '-2px' }} /> Tap
-          browser menu (<strong>⋮</strong>) or the address bar install icon (<strong>⊕</strong>) and select{' '}
-          <strong>Install App</strong>.
-        </div>
-      ) : null}
-
-      <div className="install-actions">
-        <button
-          type="button"
-          className="btn-editorial btn-editorial-ghost"
-          onClick={dismiss}
+        <section
+          className="install-modal-card"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="install-title"
+          aria-describedby="install-copy"
         >
-          <span>Maybe Later</span>
-        </button>
-
-        {hasNativePrompt ? (
           <button
             type="button"
-            className="btn-editorial btn-editorial-ink"
-            onClick={install}
-          >
-            <Download size={15} aria-hidden="true" />
-            <span>Install App</span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="btn-editorial btn-editorial-ink"
+            className="install-close"
+            aria-label="Close install recommendation"
             onClick={dismiss}
           >
-            <span>Got It</span>
+            <X size={18} aria-hidden="true" />
           </button>
-        )}
+
+          <div className="install-icon-wrapper">
+            <img
+              src="/pwa-192.png"
+              alt="FoodFinder Icon"
+              className="install-icon"
+              width="64"
+              height="64"
+            />
+          </div>
+
+          <h2 id="install-title" className="install-title">
+            Install FoodFinder
+          </h2>
+
+          <p className="install-copy" id="install-copy">
+            Add FoodFinder to your home screen for the fastest full-screen Cebu City food map.
+          </p>
+
+          <ul className="install-perks">
+            <li>
+              <Zap size={16} aria-hidden="true" />
+              <span>Opens instantly like a native mobile app</span>
+            </li>
+            <li>
+              <Smartphone size={16} aria-hidden="true" />
+              <span>Full-screen map navigation with zero browser bars</span>
+            </li>
+            <li>
+              <WifiOff size={16} aria-hidden="true" />
+              <span>App shell cached offline for quick reloads</span>
+            </li>
+          </ul>
+
+          {ios ? (
+            <div className="install-ios">
+              In Safari, tap <Share size={14} aria-hidden="true" /> <strong>Share</strong>, then scroll
+              and tap <strong>Add to Home Screen</strong>.
+            </div>
+          ) : !hasNativePrompt ? (
+            <div className="install-ios">
+              <MonitorSmartphone size={14} aria-hidden="true" style={{ verticalAlign: '-2px' }} /> Tap
+              browser menu (<strong>⋮</strong>) or the address bar install icon (<strong>⊕</strong>) and select{' '}
+              <strong>Install App</strong>.
+            </div>
+          ) : null}
+
+          <div className="install-actions">
+            <button
+              type="button"
+              className="btn-editorial btn-editorial-ghost"
+              onClick={dismiss}
+            >
+              <span>Maybe Later</span>
+            </button>
+
+            {hasNativePrompt ? (
+              <button
+                type="button"
+                className="btn-editorial btn-editorial-ink"
+                onClick={install}
+              >
+                <Download size={15} aria-hidden="true" />
+                <span>Install App</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn-editorial btn-editorial-ink"
+                onClick={dismiss}
+              >
+                <span>Got It</span>
+              </button>
+            )}
+          </div>
+        </section>
       </div>
-    </dialog>
+    </div>
   );
 }
