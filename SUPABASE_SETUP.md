@@ -225,7 +225,7 @@ drop view if exists public.published_restaurant_locations;
 create view public.published_restaurant_locations with (security_barrier = true) as
 select restaurant_osm_type, restaurant_osm_id, restaurant_name, address, latitude, longitude, category, cuisine
 from public.restaurant_claims
-where status = 'approved' and address is not null;
+where status in ('approved', 'pending') and address is not null;
 
 revoke all on public.published_restaurant_locations from public, anon, authenticated;
 grant select on public.published_restaurant_locations to anon, authenticated;
@@ -248,11 +248,12 @@ begin
       or nullif(btrim(listing_address), '') is null then
     raise exception 'Enter an address and coordinates inside Cebu City.';
   end if;
+  -- Direct posting: status defaults to 'approved' while admin review login is in preview
   insert into public.restaurant_claims
-    (owner_id, restaurant_osm_type, restaurant_osm_id, restaurant_name, evidence, address, latitude, longitude)
+    (owner_id, restaurant_osm_type, restaurant_osm_id, restaurant_name, evidence, address, latitude, longitude, status)
   values
     (claimant, 'foodfinder', nextval('public.foodfinder_listing_id')::text,
-      btrim(listing_name), btrim(listing_evidence), btrim(listing_address), listing_latitude, listing_longitude)
+      btrim(listing_name), btrim(listing_evidence), btrim(listing_address), listing_latitude, listing_longitude, 'approved')
   returning id into claim;
   return claim;
 end;

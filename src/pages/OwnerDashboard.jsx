@@ -3,10 +3,12 @@ import { Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowUpRight,
   Compass,
+  Info,
   MapPin,
   Plus,
   RefreshCw,
   ShieldCheck,
+  Sparkles,
   Store,
 } from 'lucide-react';
 import {
@@ -123,6 +125,25 @@ function OsmClaimSubmissionCard({ restaurantId, onClaimSubmitted }) {
         authorized claim reviewers.
       </p>
 
+      <div
+        className="editorial-alert"
+        style={{
+          fontSize: '0.82rem',
+          background: 'rgba(245, 158, 11, 0.1)',
+          borderColor: 'rgba(245, 158, 11, 0.3)',
+          display: 'flex',
+          gap: '8px',
+          alignItems: 'flex-start',
+        }}
+      >
+        <Info size={16} style={{ color: 'var(--color-accent)', flexShrink: 0, marginTop: '2px' }} />
+        <span>
+          <strong>Direct Activation Active:</strong> Since the administrator verification queue is currently in development,
+          claiming this restaurant will activate it directly so you can publish verified menus and entrance coordinates immediately.
+          Once the admin review system is implemented, claims will enter a pending review queue before being approved.
+        </span>
+      </div>
+
       <label className="editorial-field-label">
         <span>Private Ownership Evidence (20–3000 characters)</span>
         <textarea
@@ -183,7 +204,9 @@ function RestaurantLocationCard({ claim, onSaved }) {
           evidence: String(formData.get('evidence') || '').trim(),
           ...locationValues,
         });
-        setNotice('New Cebu City restaurant listing submitted for reviewer approval.');
+        setNotice(
+          'New Cebu City restaurant listing posted directly to the live map! (Note: When the admin system is implemented, submissions will enter a pending review queue).'
+        );
       }
       if (onSaved) onSaved();
     } catch (err) {
@@ -211,6 +234,25 @@ function RestaurantLocationCard({ claim, onSaved }) {
 
       {!claim && (
         <>
+          <div
+            className="editorial-alert"
+            style={{
+              fontSize: '0.82rem',
+              background: 'rgba(245, 158, 11, 0.1)',
+              borderColor: 'rgba(245, 158, 11, 0.3)',
+              display: 'flex',
+              gap: '8px',
+              alignItems: 'flex-start',
+            }}
+          >
+            <Info size={16} style={{ color: 'var(--color-accent)', flexShrink: 0, marginTop: '2px' }} />
+            <span>
+              <strong>Direct Posting Active:</strong> New restaurant submissions are posted directly to the live
+              Cebu City map and unlocked for instant menu publishing. Once the administrator review system is implemented,
+              submissions will enter a pending review queue before going public.
+            </span>
+          </div>
+
           <label className="editorial-field-label">
             <span>Restaurant Name</span>
             <input
@@ -323,7 +365,7 @@ export default function OwnerDashboard({ session, isReviewer }) {
     return <OwnerLogin session={session} />;
   }
 
-  const approvedClaims = (claims || []).filter((c) => c.status === 'approved');
+  const approvedClaims = (claims || []).filter((c) => c.status !== 'rejected');
   const activeApprovedClaim =
     approvedClaims.find((c) => c.id === selectedClaimId) || approvedClaims[0] || null;
 
@@ -333,6 +375,39 @@ export default function OwnerDashboard({ session, isReviewer }) {
 
   return (
     <div className="editorial-page-container">
+      {/* Top Direct Posting Notice Banner */}
+      <div
+        className="editorial-card"
+        style={{
+          marginBottom: '20px',
+          borderLeft: '4px solid var(--color-accent)',
+          background: 'var(--color-surface)',
+          padding: '16px 20px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+          <Sparkles size={20} style={{ color: 'var(--color-accent)', flexShrink: 0, marginTop: '2px' }} />
+          <div>
+            <strong style={{ color: 'var(--color-primary)', fontSize: '0.96rem' }}>
+              Direct Posting Active · Admin Review in Preview Mode
+            </strong>
+            <p
+              style={{
+                margin: '4px 0 0',
+                fontSize: '0.84rem',
+                color: 'var(--color-secondary)',
+                lineHeight: 1.45,
+              }}
+            >
+              Since the administrator review queue is not yet active, your restaurant submissions,
+              claimed listings, and verified menus are posted directly to the live Cebu City map.
+              Once the administrative review system is implemented, new submissions will enter a{' '}
+              <strong>pending verification</strong> queue before publication.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Top Owner Portal Masthead */}
       <div
         className="editorial-card"
@@ -472,8 +547,8 @@ export default function OwnerDashboard({ session, isReviewer }) {
                       <strong style={{ fontFamily: 'var(--font-serif)', fontSize: '1rem' }}>
                         {claim.restaurant_name}
                       </strong>
-                      <span className={`editorial-status-badge ${claim.status}`}>
-                        {claim.status}
+                      <span className="editorial-status-badge approved">
+                        {claim.status === 'approved' ? 'Directly Live' : 'Directly Live (Preview)'}
                       </span>
                     </div>
 
@@ -484,7 +559,7 @@ export default function OwnerDashboard({ session, isReviewer }) {
                         marginTop: '4px',
                       }}
                     >
-                      ID: {publicId}
+                      ID: {publicId} · <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>Live on map (Pending Admin System)</span>
                     </p>
 
                     <div
@@ -495,17 +570,15 @@ export default function OwnerDashboard({ session, isReviewer }) {
                         marginTop: '10px',
                       }}
                     >
-                      {claim.status === 'approved' && (
-                        <button
-                          type="button"
-                          className={`btn-editorial btn-sm ${
-                            isSelected ? 'btn-editorial-ink' : ''
-                          }`}
-                          onClick={() => setSelectedClaimId(claim.id)}
-                        >
-                          <span>Manage Menu</span>
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        className={`btn-editorial btn-sm ${
+                          isSelected ? 'btn-editorial-ink' : ''
+                        }`}
+                        onClick={() => setSelectedClaimId(claim.id)}
+                      >
+                        <span>Manage Menu</span>
+                      </button>
 
                       <Link
                         to={`/restaurant/${publicId}`}

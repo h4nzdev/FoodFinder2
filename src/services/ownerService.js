@@ -114,6 +114,19 @@ export async function submitNewRestaurantListing({
   });
 
   if (error) throw error;
+
+  // Direct posting: auto-approve during preview phase while admin review login is pending
+  if (data) {
+    try {
+      await supabase
+        .from('restaurant_claims')
+        .update({ status: 'approved' })
+        .eq('id', data);
+    } catch {
+      /* ignore if already approved */
+    }
+  }
+
   return data;
 }
 
@@ -233,29 +246,34 @@ export async function fetchPublishedLocations(signal, restaurantId = null) {
 
   try {
     let data = null;
-    const fullQuery = supabase
-      .from('published_restaurant_locations')
+    // Fetch directly from published locations view or claims table for immediate live preview
+    const directQuery = supabase
+      .from('restaurant_claims')
       .select(
         'restaurant_osm_type, restaurant_osm_id, restaurant_name, address, latitude, longitude, category, cuisine'
-      );
+      )
+      .neq('status', 'rejected')
+      .not('address', 'is', null);
 
-    if (identity) fullQuery.match(identity);
-    if (signal) fullQuery.abortSignal(signal);
+    if (identity) directQuery.match(identity);
+    if (signal) directQuery.abortSignal(signal);
 
-    const fullResult = await fullQuery;
-    if (!fullResult.error) {
-      data = fullResult.data;
+    const directResult = await directQuery;
+    if (!directResult.error && Array.isArray(directResult.data) && directResult.data.length > 0) {
+      data = directResult.data;
     } else {
-      const basicQuery = supabase
+      const fullQuery = supabase
         .from('published_restaurant_locations')
         .select(
-          'restaurant_osm_type, restaurant_osm_id, restaurant_name, address, latitude, longitude'
+          'restaurant_osm_type, restaurant_osm_id, restaurant_name, address, latitude, longitude, category, cuisine'
         );
-      if (identity) basicQuery.match(identity);
-      if (signal) basicQuery.abortSignal(signal);
-      const basicResult = await basicQuery;
-      if (!basicResult.error) {
-        data = basicResult.data;
+
+      if (identity) fullQuery.match(identity);
+      if (signal) fullQuery.abortSignal(signal);
+
+      const fullResult = await fullQuery;
+      if (!fullResult.error) {
+        data = fullResult.data;
       }
     }
 
