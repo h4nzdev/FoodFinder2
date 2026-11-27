@@ -302,8 +302,19 @@
     font-size: 0.76rem;
   }
 
+  .restaurant-item-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
   .restaurant-item-title {
     font-size: 0.98rem;
+    overflow-wrap: anywhere;
+  }
+
+  .restaurant-item-badges {
+    flex-wrap: wrap;
   }
 
   .selected-restaurant-folio {

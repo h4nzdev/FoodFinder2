@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Download, Share, Smartphone, WifiOff, X, Zap } from 'lucide-react';
+import { Download, Share, X } from 'lucide-react';
 import '../../styles/installPrompt.css';
 
 const DISMISS_KEY = 'foodfinder-install-dismissed-at';
@@ -22,25 +22,34 @@ function recentlyDismissed() {
 }
 
 function isIos() {
-  return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
 export default function InstallPrompt() {
   const [open, setOpen] = useState(false);
   const [iosMode, setIosMode] = useState(false);
   const deferredPrompt = useRef(null);
-  const installBtnRef = useRef(null);
+  const dialogRef = useRef(null);
 
   useEffect(() => {
     if (isStandalone() || recentlyDismissed()) return undefined;
     let timer;
+    const schedule = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (!isStandalone() && !recentlyDismissed()) setOpen(true);
+      }, SHOW_DELAY_MS);
+    };
 
     const handleBeforeInstall = (event) => {
       event.preventDefault();
       deferredPrompt.current = event;
-      timer = setTimeout(() => setOpen(true), SHOW_DELAY_MS);
+      setIosMode(false);
+      schedule();
     };
     const handleInstalled = () => {
+      clearTimeout(timer);
       deferredPrompt.current = null;
       setOpen(false);
     };
@@ -51,7 +60,7 @@ export default function InstallPrompt() {
     // iOS Safari has no beforeinstallprompt: show manual "Add to Home Screen" guide
     if (isIos()) {
       setIosMode(true);
-      timer = setTimeout(() => setOpen(true), SHOW_DELAY_MS);
+      schedule();
     }
 
     return () => {
@@ -63,10 +72,9 @@ export default function InstallPrompt() {
 
   useEffect(() => {
     if (!open) return undefined;
-    installBtnRef.current?.focus();
-    const onKey = (event) => event.key === 'Escape' && dismiss();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    const dialog = dialogRef.current;
+    dialog.showModal();
+    return () => dialog.close();
   }, [open]);
 
   const dismiss = () => {
@@ -81,23 +89,32 @@ export default function InstallPrompt() {
   const install = async () => {
     const promptEvent = deferredPrompt.current;
     if (!promptEvent) return dismiss();
-    promptEvent.prompt();
-    const { outcome } = await promptEvent.userChoice;
     deferredPrompt.current = null;
-    if (outcome === 'accepted') setOpen(false);
-    else dismiss();
+    setOpen(false);
+    try {
+      await promptEvent.prompt();
+      const { outcome } = await promptEvent.userChoice;
+      if (outcome === 'dismissed') dismiss();
+    } catch {
+      dismiss();
+    }
   };
 
   if (!open) return null;
 
   return (
-    <div className="install-backdrop" onClick={dismiss}>
-      <section
+      <dialog
+        ref={dialogRef}
         className="install-modal"
-        role="dialog"
-        aria-modal="true"
         aria-labelledby="install-title"
-        onClick={(event) => event.stopPropagation()}
+        aria-describedby="install-copy"
+        onCancel={dismiss}
+        onClick={(event) => {
+          if (event.target !== event.currentTarget) return;
+          const rect = event.currentTarget.getBoundingClientRect();
+          if (event.clientX < rect.left || event.clientX > rect.right ||
+              event.clientY < rect.top || event.clientY > rect.bottom) dismiss();
+        }}
       >
         <button type="button" className="install-close" aria-label="Close" onClick={dismiss}>
           <X size={18} aria-hidden="true" />
@@ -105,20 +122,15 @@ export default function InstallPrompt() {
 
         <img src="/pwa-192.png" alt="" className="install-icon" width="72" height="72" />
         <h2 id="install-title" className="install-title">Install FoodFinder</h2>
-        <p className="install-copy">
-          Add FoodFinder to your home screen for a faster, full-screen Cebu City food map.
+        <p className="install-copy" id="install-copy">
+          Keep the Cebu City food map one tap away. Open FoodFinder from your device to find places to eat.
         </p>
-
-        <ul className="install-perks">
-          <li><Zap size={15} aria-hidden="true" /><span>Opens instantly like a native app</span></li>
-          <li><Smartphone size={15} aria-hidden="true" /><span>Full-screen map, no browser bars</span></li>
-          <li><WifiOff size={15} aria-hidden="true" /><span>App shell loads even on weak signal</span></li>
-        </ul>
 
         {iosMode ? (
           <div className="install-ios">
-            Tap <Share size={14} aria-label="Share" /> <strong>Share</strong>, then{' '}
-            <strong>Add to Home Screen</strong>.
+            In Safari, tap <Share size={14} aria-hidden="true" /> <strong>Share</strong> and choose{' '}
+            <strong>Add to Home Screen</strong>. Enable <strong>Open as Web App</strong> if shown,
+            then tap <strong>Add</strong>.
           </div>
         ) : null}
 
@@ -128,7 +140,6 @@ export default function InstallPrompt() {
           </button>
           {!iosMode && (
             <button
-              ref={installBtnRef}
               type="button"
               className="btn-editorial btn-editorial-ink"
               onClick={install}
@@ -138,7 +149,6 @@ export default function InstallPrompt() {
             </button>
           )}
         </div>
-      </section>
-    </div>
+      </dialog>
   );
 }

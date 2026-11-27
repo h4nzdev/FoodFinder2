@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   BookOpen,
+  Bot,
   ChevronDown,
   ChevronUp,
   List,
@@ -600,10 +601,9 @@ export default function Discover() {
         onGetDirections={handleGetDirections}
       />
 
-      {/* MOBILE MODE SWITCHER: Map / Split Sheet / Full List / Active Route */}
       <nav
         className={`mobile-mode-switcher ${hasActiveRoute ? 'has-route' : ''}`}
-        aria-label="Mobile layout view switcher"
+        aria-label="Discovery views and SugBot"
       >
         <button
           type="button"
@@ -636,6 +636,8 @@ export default function Discover() {
           <span>List ({filteredRestaurants.length})</span>
         </button>
 
+        <MobileChatLauncher open={chatOpen} onOpen={() => setChatOpen(true)} />
+
         {hasActiveRoute && (
           <button
             type="button"
@@ -646,7 +648,6 @@ export default function Discover() {
             <span>Route</span>
           </button>
         )}
-        <MobileChatLauncher open={chatOpen} onOpen={() => setChatOpen(true)} />
       </nav>
     </div>
   );
@@ -659,7 +660,7 @@ function MobileChatLauncher({ open, onOpen }) {
     <button
       type="button"
       className="mobile-mode-btn chatbot-launcher"
-      aria-label="Swipe up or tap to open SugBot"
+      aria-label="SugBot AI assistant, swipe up or tap to open"
       aria-haspopup="dialog"
       aria-expanded={open}
       onPointerDown={(event) => {
@@ -681,7 +682,7 @@ function MobileChatLauncher({ open, onOpen }) {
         if (event.detail === 0) onOpen();
       }}
     >
-      <ChevronUp size={16} aria-hidden="true" />
+      <Bot size={16} aria-hidden="true" />
       <span>SugBot</span>
     </button>
   );
