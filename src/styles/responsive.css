@@ -38,6 +38,7 @@
     font-size: 1.05rem;
   }
 
+  .brand-titles,
   .brand-subline,
   .hide-on-mobile-nav {
     display: none !important;
