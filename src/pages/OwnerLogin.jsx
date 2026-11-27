@@ -76,17 +76,9 @@ export default function OwnerLogin({ session }) {
       </div>
 
       <div className="menu-broadsheet">
-        <div
-          className="menu-broadsheet-inner-frame"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: '28px',
-            alignItems: 'start',
-          }}
-        >
-          {/* Editorial Introduction Column */}
-          <div>
+        <div className="menu-broadsheet-inner-frame owner-login-grid">
+          {/* Editorial Introduction Column (appears at bottom on mobile, left on desktop) */}
+          <div className="owner-login-info">
             <span className="editorial-kicker">Verified Kitchen Registry</span>
             <h1 className="serif-heading" style={{ fontSize: '1.85rem', marginTop: '6px' }}>
               Restaurant Owner Portal
@@ -125,8 +117,8 @@ export default function OwnerLogin({ session }) {
             </div>
           </div>
 
-          {/* Authentication Form Column */}
-          <div>
+          {/* Authentication Form Column (appears at top on mobile, right on desktop) */}
+          <div className="owner-login-form">
             {!isSupabaseConfigured() ? (
               <div className="editorial-alert" role="alert">
                 Supabase environment variables are not configured. Set{' '}

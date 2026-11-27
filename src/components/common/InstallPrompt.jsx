@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import { Download, Share, X } from 'lucide-react';
+import { Download, MonitorSmartphone, Share, Smartphone, WifiOff, X, Zap } from 'lucide-react';
 import '../../styles/installPrompt.css';
 
 const DISMISS_KEY = 'foodfinder-install-dismissed-at';
 const DISMISS_DAYS = 3;
-const SHOW_DELAY_MS = 6000; // wait until the splash screen has finished
+const SHOW_DELAY_MS = 6500; // wait until the splash screen has finished
 
 function isStandalone() {
+  if (typeof window === 'undefined') return false;
   return (
-    window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true
+    window.matchMedia?.('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true
   );
 }
 
 function recentlyDismissed() {
+  if (typeof window === 'undefined') return false;
   try {
     const at = Number(localStorage.getItem(DISMISS_KEY));
     return at && Date.now() - at < DISMISS_DAYS * 86400000;
@@ -22,32 +25,39 @@ function recentlyDismissed() {
 }
 
 function isIos() {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (typeof navigator === 'undefined') return false;
+  return (
+    /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
 }
 
 export default function InstallPrompt() {
   const [open, setOpen] = useState(false);
-  const [iosMode, setIosMode] = useState(false);
+  const [hasNativePrompt, setHasNativePrompt] = useState(false);
   const deferredPrompt = useRef(null);
   const dialogRef = useRef(null);
 
   useEffect(() => {
+    // Expose global trigger for manual testing or header/sidebar install button
+    if (typeof window !== 'undefined') {
+      window.showFoodFinderInstallPrompt = () => setOpen(true);
+    }
+
     if (isStandalone() || recentlyDismissed()) return undefined;
-    let timer;
-    const schedule = () => {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        if (!isStandalone() && !recentlyDismissed()) setOpen(true);
-      }, SHOW_DELAY_MS);
-    };
+
+    let timer = setTimeout(() => {
+      if (!isStandalone() && !recentlyDismissed()) {
+        setOpen(true);
+      }
+    }, SHOW_DELAY_MS);
 
     const handleBeforeInstall = (event) => {
       event.preventDefault();
       deferredPrompt.current = event;
-      setIosMode(false);
-      schedule();
+      setHasNativePrompt(true);
     };
+
     const handleInstalled = () => {
       clearTimeout(timer);
       deferredPrompt.current = null;
@@ -56,12 +66,6 @@ export default function InstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
     window.addEventListener('appinstalled', handleInstalled);
-
-    // iOS Safari has no beforeinstallprompt: show manual "Add to Home Screen" guide
-    if (isIos()) {
-      setIosMode(true);
-      schedule();
-    }
 
     return () => {
       clearTimeout(timer);
@@ -73,22 +77,29 @@ export default function InstallPrompt() {
   useEffect(() => {
     if (!open) return undefined;
     const dialog = dialogRef.current;
-    dialog.showModal();
-    return () => dialog.close();
+    if (dialog && !dialog.open) {
+      dialog.showModal();
+    }
+    return () => {
+      if (dialog?.open) dialog.close();
+    };
   }, [open]);
 
   const dismiss = () => {
     try {
       localStorage.setItem(DISMISS_KEY, String(Date.now()));
     } catch {
-      /* ignore */
+      /* ignore storage errors */
     }
     setOpen(false);
   };
 
   const install = async () => {
     const promptEvent = deferredPrompt.current;
-    if (!promptEvent) return dismiss();
+    if (!promptEvent) {
+      dismiss();
+      return;
+    }
     deferredPrompt.current = null;
     setOpen(false);
     try {
@@ -102,53 +113,109 @@ export default function InstallPrompt() {
 
   if (!open) return null;
 
+  const ios = isIos();
+
   return (
-      <dialog
-        ref={dialogRef}
-        className="install-modal"
-        aria-labelledby="install-title"
-        aria-describedby="install-copy"
-        onCancel={dismiss}
-        onClick={(event) => {
-          if (event.target !== event.currentTarget) return;
-          const rect = event.currentTarget.getBoundingClientRect();
-          if (event.clientX < rect.left || event.clientX > rect.right ||
-              event.clientY < rect.top || event.clientY > rect.bottom) dismiss();
-        }}
+    <dialog
+      ref={dialogRef}
+      className="install-modal"
+      aria-labelledby="install-title"
+      aria-describedby="install-copy"
+      onCancel={dismiss}
+      onClick={(event) => {
+        if (event.target !== event.currentTarget) return;
+        const rect = event.currentTarget.getBoundingClientRect();
+        if (
+          event.clientX < rect.left ||
+          event.clientX > rect.right ||
+          event.clientY < rect.top ||
+          event.clientY > rect.bottom
+        ) {
+          dismiss();
+        }
+      }}
+    >
+      <button
+        type="button"
+        className="install-close"
+        aria-label="Close install recommendation"
+        onClick={dismiss}
       >
-        <button type="button" className="install-close" aria-label="Close" onClick={dismiss}>
-          <X size={18} aria-hidden="true" />
+        <X size={18} aria-hidden="true" />
+      </button>
+
+      <img
+        src="/pwa-192.png"
+        alt="FoodFinder Icon"
+        className="install-icon"
+        width="68"
+        height="68"
+      />
+
+      <h2 id="install-title" className="install-title">
+        Install FoodFinder
+      </h2>
+
+      <p className="install-copy" id="install-copy">
+        Add FoodFinder to your home screen for the fastest full-screen Cebu City food map.
+      </p>
+
+      <ul className="install-perks">
+        <li>
+          <Zap size={14} aria-hidden="true" />
+          <span>Opens instantly like a native mobile app</span>
+        </li>
+        <li>
+          <Smartphone size={14} aria-hidden="true" />
+          <span>Full-screen map navigation with zero browser bars</span>
+        </li>
+        <li>
+          <WifiOff size={14} aria-hidden="true" />
+          <span>App shell cached offline for quick reloads</span>
+        </li>
+      </ul>
+
+      {ios ? (
+        <div className="install-ios">
+          In Safari, tap <Share size={14} aria-hidden="true" /> <strong>Share</strong>, then scroll
+          and tap <strong>Add to Home Screen</strong>.
+        </div>
+      ) : !hasNativePrompt ? (
+        <div className="install-ios">
+          <MonitorSmartphone size={14} aria-hidden="true" style={{ verticalAlign: '-2px' }} /> Tap
+          browser menu (<strong>⋮</strong>) or the address bar install icon (<strong>⊕</strong>) and select{' '}
+          <strong>Install App</strong>.
+        </div>
+      ) : null}
+
+      <div className="install-actions">
+        <button
+          type="button"
+          className="btn-editorial btn-editorial-ghost"
+          onClick={dismiss}
+        >
+          <span>Maybe Later</span>
         </button>
 
-        <img src="/pwa-192.png" alt="" className="install-icon" width="72" height="72" />
-        <h2 id="install-title" className="install-title">Install FoodFinder</h2>
-        <p className="install-copy" id="install-copy">
-          Keep the Cebu City food map one tap away. Open FoodFinder from your device to find places to eat.
-        </p>
-
-        {iosMode ? (
-          <div className="install-ios">
-            In Safari, tap <Share size={14} aria-hidden="true" /> <strong>Share</strong> and choose{' '}
-            <strong>Add to Home Screen</strong>. Enable <strong>Open as Web App</strong> if shown,
-            then tap <strong>Add</strong>.
-          </div>
-        ) : null}
-
-        <div className="install-actions">
-          <button type="button" className="btn-editorial btn-editorial-ghost" onClick={dismiss}>
-            <span>Maybe Later</span>
+        {hasNativePrompt ? (
+          <button
+            type="button"
+            className="btn-editorial btn-editorial-ink"
+            onClick={install}
+          >
+            <Download size={15} aria-hidden="true" />
+            <span>Install App</span>
           </button>
-          {!iosMode && (
-            <button
-              type="button"
-              className="btn-editorial btn-editorial-ink"
-              onClick={install}
-            >
-              <Download size={15} aria-hidden="true" />
-              <span>Install App</span>
-            </button>
-          )}
-        </div>
-      </dialog>
+        ) : (
+          <button
+            type="button"
+            className="btn-editorial btn-editorial-ink"
+            onClick={dismiss}
+          >
+            <span>Got It</span>
+          </button>
+        )}
+      </div>
+    </dialog>
   );
 }

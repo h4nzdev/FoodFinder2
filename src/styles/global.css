@@ -1145,6 +1145,29 @@ ol {
   margin-top: 6px;
 }
 
+.menu-header-art {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.menu-details-toggle,
+.menu-category-picker { display: none; }
+
+.menu-publication {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 8px 12px;
+  margin-bottom: 18px;
+  border: var(--rule-ink);
+  background: var(--color-background);
+  font-size: 0.75rem;
+}
+
 .menu-broadsheet-meta-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -1348,6 +1371,21 @@ ol {
   grid-template-columns: 330px minmax(0, 1fr);
   gap: 24px;
   align-items: start;
+}
+
+.owner-login-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 28px;
+  align-items: start;
+}
+
+.owner-login-info {
+  order: 1;
+}
+
+.owner-login-form {
+  order: 2;
 }
 
 .editorial-card {

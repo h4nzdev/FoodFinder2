@@ -491,15 +491,21 @@ export default function DiscoveryMap({
       <MapContainer
         center={CEBU_CITY_CENTER}
         zoom={14}
-        minZoom={11}
-        maxZoom={19}
+        minZoom={10}
+        maxZoom={20}
         zoomControl={false}
         preferCanvas={true}
         className="editorial-leaflet-map"
       >
         <TileLayer
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          subdomains="abcd"
+          minZoom={10}
+          maxZoom={20}
+          maxNativeZoom={19}
+          keepBuffer={8}
+          updateWhenZooming={false}
           className="editorial-map-tiles"
         />
 

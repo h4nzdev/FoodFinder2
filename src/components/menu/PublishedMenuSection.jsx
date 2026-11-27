@@ -13,6 +13,7 @@ export default function PublishedMenuSection({ restaurant, compact = false }) {
     error: '',
   });
   const [attempt, setAttempt] = useState(0);
+  const [selection, setSelection] = useState(null);
 
   useEffect(() => {
     if (!restaurant?.id) return;
@@ -73,6 +74,10 @@ export default function PublishedMenuSection({ restaurant, compact = false }) {
 
   const externalMenuLink = restaurant?.menuUrl || null;
   const officialWebsite = restaurant?.website || null;
+  const selectedCategory = selection?.restaurantId === restaurant?.id &&
+    groupedCategories.some(([name]) => name === selection.category)
+    ? selection.category
+    : groupedCategories[0]?.[0];
 
   return (
     <div className="published-menu-container">
@@ -145,23 +150,11 @@ export default function PublishedMenuSection({ restaurant, compact = false }) {
       )}
 
       {!state.loading && !state.error && groupedCategories.length > 0 && (
-        <div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '8px',
-              padding: '8px 12px',
-              marginBottom: '18px',
-              border: 'var(--rule-ink)',
-              backgroundColor: 'var(--color-background)',
-              fontSize: '0.75rem',
-            }}
-          >
+        <div className="menu-sections">
+          <div className="menu-publication">
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
               <ShieldCheck size={14} aria-hidden="true" />
-              <span>VERIFIED OWNER-PUBLISHED MENU · PHILIPPINE PESOS (₱)</span>
+              <span>Verified menu · Philippine pesos (₱)</span>
             </span>
             {state.menu?.published_at && (
               <span style={{ color: 'var(--color-secondary)' }}>
@@ -170,8 +163,27 @@ export default function PublishedMenuSection({ restaurant, compact = false }) {
             )}
           </div>
 
+          {!compact && groupedCategories.length > 1 && (
+            <label className="menu-category-picker">
+              <span>Category</span>
+              <select
+                value={selectedCategory}
+                onChange={(event) => {
+                  const sections = event.currentTarget.closest('.menu-sections');
+                  if (sections.getBoundingClientRect().top < 0) sections.scrollIntoView({ block: 'start' });
+                  setSelection({ restaurantId: restaurant.id, category: event.target.value });
+                }}
+              >
+                {groupedCategories.map(([name, dishes]) => (
+                  <option key={name} value={name}>{name} ({dishes.length})</option>
+                ))}
+              </select>
+            </label>
+          )}
+
           {groupedCategories.map(([categoryName, dishes]) => (
-            <section key={categoryName} className="menu-category-chapter">
+            <section key={categoryName} className="menu-category-chapter" aria-label={categoryName}
+              data-selected={selectedCategory === categoryName}>
               <div className="menu-chapter-header">
                 <h3 className="menu-chapter-title">{categoryName}</h3>
                 <span className="menu-chapter-count">

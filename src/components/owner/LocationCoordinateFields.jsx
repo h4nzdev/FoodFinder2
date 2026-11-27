@@ -718,16 +718,21 @@ export default function LocationCoordinateFields({ initialLocation, disabled = f
           <MapContainer
             center={activeMapCenter}
             zoom={hasValidCoordinates ? 16 : 13}
-            minZoom={11}
-            maxZoom={18}
+            minZoom={10}
+            maxZoom={20}
             maxBounds={CEBU_CITY_BOUNDS}
             maxBoundsViscosity={0.85}
             scrollWheelZoom={false}
             style={{ height: '100%', width: '100%' }}
           >
             <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
               url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              subdomains="abcd"
+              minZoom={10}
+              maxZoom={20}
+              maxNativeZoom={19}
+              keepBuffer={6}
             />
             <MapViewportRecenter
               position={hasValidCoordinates ? [Number(latitude), Number(longitude)] : null}

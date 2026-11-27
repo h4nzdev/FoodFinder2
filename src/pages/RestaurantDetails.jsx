@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
+  ChevronDown,
   Clock,
   ExternalLink,
   Globe,
@@ -47,6 +48,7 @@ export default function RestaurantDetails() {
   });
   const [attempt, setAttempt] = useState(0);
   const [showRouteMap, setShowRouteMap] = useState(false);
+  const [expandedProfile, setExpandedProfile] = useState(null);
 
   const geolocation = useGeolocation();
   const routing = useRouting(geolocation);
@@ -244,7 +246,7 @@ export default function RestaurantDetails() {
       )}
 
       {/* Digital Restaurant Menu Broadsheet */}
-      <article className="menu-broadsheet">
+      <article className="menu-broadsheet restaurant-menu-page">
         <div className="menu-broadsheet-inner-frame">
           <header className="menu-broadsheet-header">
             <div>
@@ -268,7 +270,7 @@ export default function RestaurantDetails() {
               )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+            <div className="menu-header-art">
               <PlateUtensilsIllustration size={68} />
               <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', letterSpacing: '0.08em' }}>
                 REF: {restaurant.id.toUpperCase()}
@@ -276,9 +278,15 @@ export default function RestaurantDetails() {
             </div>
           </header>
 
-          {/* Restaurant Metadata Table */}
-          <div className="menu-broadsheet-meta-grid">
-            <div className="menu-meta-cell">
+          {(restaurant.address || restaurant.openingHours || restaurant.phone || restaurant.menuUrl || restaurant.website) && (
+            <button type="button" className="menu-details-toggle" aria-controls="restaurant-profile"
+              aria-expanded={expandedProfile === id}
+              onClick={() => setExpandedProfile(expandedProfile === id ? null : id)}>
+              Restaurant details <ChevronDown size={16} aria-hidden="true" />
+            </button>
+          )}
+          <div id="restaurant-profile" className="menu-broadsheet-meta-grid" data-expanded={expandedProfile === id}>
+            <div className="menu-meta-cell" data-empty={!restaurant.address}>
               <span className="menu-meta-label">
                 <MapPin size={11} style={{ display: 'inline', marginRight: '4px' }} />
                 Street Address
@@ -288,7 +296,7 @@ export default function RestaurantDetails() {
               </span>
             </div>
 
-            <div className="menu-meta-cell">
+            <div className="menu-meta-cell" data-empty={!restaurant.openingHours}>
               <span className="menu-meta-label">
                 <Clock size={11} style={{ display: 'inline', marginRight: '4px' }} />
                 Opening Hours
@@ -298,7 +306,7 @@ export default function RestaurantDetails() {
               </span>
             </div>
 
-            <div className="menu-meta-cell">
+            <div className="menu-meta-cell" data-empty={!restaurant.phone}>
               <span className="menu-meta-label">
                 <Phone size={11} style={{ display: 'inline', marginRight: '4px' }} />
                 Contact Number
@@ -308,7 +316,7 @@ export default function RestaurantDetails() {
               </span>
             </div>
 
-            <div className="menu-meta-cell">
+            <div className="menu-meta-cell" data-empty={!restaurant.menuUrl && !restaurant.website}>
               <span className="menu-meta-label">
                 <Globe size={11} style={{ display: 'inline', marginRight: '4px' }} />
                 Website &amp; External Menu
