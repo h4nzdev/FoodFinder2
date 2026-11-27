@@ -21,6 +21,8 @@ import { useRouting } from '../hooks/useRouting';
 import RestaurantListItem from '../components/restaurant/RestaurantListItem';
 import SelectedRestaurantPanel from '../components/restaurant/SelectedRestaurantPanel';
 import DiscoveryMap from '../components/map/DiscoveryMap';
+import FoodChatbot from '../components/chat/FoodChatbot';
+import '../styles/chatbot.css';
 import {
   CoffeeCupIllustration,
   FoodBowlIllustration,
@@ -586,6 +588,14 @@ export default function Discover() {
         geolocation={geolocation}
         routing={routing}
         mobileMode={mobileMode}
+      />
+
+      {/* Floating Groq AI food assistant with GenUI recommendation cards */}
+      <FoodChatbot
+        restaurants={allRestaurants}
+        geolocation={geolocation}
+        onSelectRestaurant={handleSelectRestaurant}
+        onGetDirections={handleGetDirections}
       />
 
       {/* MOBILE MODE SWITCHER: Map / Split Sheet / Full List / Active Route */}
