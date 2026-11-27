@@ -1,0 +1,66 @@
+/* ==========================================================================
+   FOODFINDER — Stitch Design DNA & Neumorphic 60-30-10 Tokens (tokens.css)
+   - 60% Soft Alabaster / Lavender-White Neumorphic Canvas (#EFEBF7 / #F7F5FC / #FFFFFF)
+   - 30% Deep Royal Purple (#2D1654 / #43237A / #513B73)
+   - 10% Warm Culinary Amber Gold Accent (#F59E0B / #D97706 / #FEF3C7)
+   ========================================================================== */
+
+:root {
+  /* 60% Dominant Base & Neumorphic Light/Shadow Pair */
+  --color-background: #EFEBF7;
+  --color-surface: #F7F5FC;
+  --color-surface-pure: #FFFFFF;
+  --color-paper-alt: #E7E1F3;
+  --color-paper-hover: #F2EEFA;
+  --neu-shadow-dark: #D2C8E6;
+  --neu-shadow-light: #FFFFFF;
+
+  /* 30% Secondary Structural Color: Deep Royal Purple */
+  --color-primary: #2D1654;
+  --color-primary-mid: #43237A;
+  --color-ink-soft: #3A1D6D;
+  --color-secondary: #513B73;
+  --color-muted: #8472A0;
+  --color-border: rgba(45, 22, 84, 0.1);
+  --color-border-strong: rgba(45, 22, 84, 0.22);
+
+  /* 10% Third Accent Color (Recommended): Warm Culinary Amber Gold */
+  --color-accent: #F59E0B;
+  --color-accent-deep: #B45309;
+  --color-accent-soft: #FEF3C7;
+  --color-accent-border: rgba(245, 158, 11, 0.45);
+
+  /* Neumorphic Dual-Shadow Elevations */
+  --neu-raised-lg: 10px 10px 22px var(--neu-shadow-dark), -10px -10px 22px var(--neu-shadow-light);
+  --neu-raised: 6px 6px 14px var(--neu-shadow-dark), -6px -6px 14px var(--neu-shadow-light);
+  --neu-raised-sm: 3px 3px 8px var(--neu-shadow-dark), -3px -3px 8px var(--neu-shadow-light);
+  --neu-inset: inset 4px 4px 8px var(--neu-shadow-dark), inset -4px -4px 8px var(--neu-shadow-light);
+  --neu-inset-sm: inset 2px 2px 5px var(--neu-shadow-dark), inset -2px -2px 5px var(--neu-shadow-light);
+  --neu-purple-surface: linear-gradient(145deg, #371B66, #251147);
+  --neu-purple-raised: 5px 5px 12px #C8BDE0, -4px -4px 10px #FFFFFF;
+  --neu-accent-glow: 0 4px 14px rgba(245, 158, 11, 0.32);
+
+  /* Typography */
+  --font-serif: 'Fraunces', 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-editorial: 'Playfair Display', 'Fraunces', Georgia, serif;
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Soft Tactile Borders & Rules */
+  --rule-thin: 1px solid rgba(45, 22, 84, 0.09);
+  --rule-ink: 1px solid rgba(45, 22, 84, 0.18);
+  --rule-heavy: 2px solid var(--color-primary);
+  --rule-dotted: 2px dotted rgba(81, 59, 115, 0.28);
+
+  /* Soft Neumorphic Radii */
+  --radius-none: 0px;
+  --radius-xs: 10px;
+  --radius-sm: 14px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-pill: 999px;
+
+  /* Layout Dimensions */
+  --header-height: 68px;
+  --discovery-sidebar-width: 500px;
+  --transition-editorial: 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}

@@ -1,0 +1,1354 @@
+/* ==========================================================================
+   FOODFINDER — Neumorphic Dark Purple, White & 10% Amber Gold (global.css)
+   60% Alabaster/Lavender-White (#EFEBF7 / #F7F5FC / #FFFFFF)
+   30% Deep Royal Purple (#2D1654 / #43237A)
+   10% Warm Culinary Amber Gold (#F59E0B / #B45309)
+   ========================================================================== */
+
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  background-color: var(--color-background);
+  color: var(--color-primary);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-primary);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-sans);
+  font-size: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Typography Utilities
+   ========================================================================== */
+
+.serif-heading {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.18;
+  color: var(--color-primary);
+}
+
+.editorial-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-primary-mid);
+}
+
+.editorial-kicker::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.55);
+}
+
+.mono-number {
+  font-family: var(--font-serif);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   App Shell & Neumorphic Top Navigation Header
+   ========================================================================== */
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.editorial-header {
+  height: var(--header-height);
+  background-color: var(--color-background);
+  box-shadow: 0 4px 14px rgba(45, 22, 84, 0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+}
+
+.editorial-header-inner {
+  height: 100%;
+  max-width: 100%;
+  padding: 0 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.brand-masthead {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.brand-emblem {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-sm);
+  background: var(--neu-purple-surface);
+  box-shadow: var(--neu-raised-sm);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-surface-pure);
+}
+
+.brand-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-wordmark {
+  font-family: var(--font-serif);
+  font-size: 1.24rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  color: var(--color-primary);
+}
+
+.brand-subline {
+  font-size: 0.69rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-secondary);
+  margin-top: 3px;
+}
+
+.header-edition-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-background);
+  box-shadow: var(--neu-inset-sm);
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--color-secondary);
+  letter-spacing: 0.04em;
+}
+
+.header-edition-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+}
+
+.editorial-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.editorial-nav-link {
+  padding: 9px 16px;
+  font-size: 0.81rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--color-secondary);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-background);
+  box-shadow: var(--neu-raised-sm);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  transition: all var(--transition-editorial);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.editorial-nav-link:hover {
+  color: var(--color-primary);
+  transform: translateY(-1px);
+  background-color: var(--color-surface);
+}
+
+.editorial-nav-link.active {
+  color: var(--color-surface-pure);
+  background: var(--neu-purple-surface);
+  box-shadow: var(--neu-purple-raised);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.editorial-nav-link.active svg {
+  color: var(--color-accent);
+}
+
+/* ==========================================================================
+   Neumorphic Buttons & Inputs
+   ========================================================================== */
+
+.btn-editorial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 0.81rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: var(--neu-raised-sm);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  transition: all var(--transition-editorial);
+  white-space: nowrap;
+}
+
+.btn-editorial:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background-color: var(--color-surface-pure);
+  color: var(--color-primary-mid);
+}
+
+.btn-editorial:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--neu-inset-sm);
+}
+
+.btn-editorial:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-editorial-ink {
+  background: var(--neu-purple-surface);
+  color: var(--color-surface-pure);
+  box-shadow: var(--neu-purple-raised);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.btn-editorial-ink svg {
+  color: var(--color-accent);
+}
+
+.btn-editorial-ink:hover:not(:disabled) {
+  background: linear-gradient(145deg, #43237A, #2D1654);
+  color: var(--color-surface-pure);
+  border-color: var(--color-accent);
+}
+
+.btn-editorial-accent {
+  background: linear-gradient(145deg, #FBBF24, #F59E0B);
+  color: var(--color-primary);
+  box-shadow: var(--neu-accent-glow);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.btn-editorial-ghost {
+  background-color: var(--color-background);
+  box-shadow: var(--neu-inset-sm);
+  border: 1px solid transparent;
+  color: var(--color-secondary);
+}
+
+.btn-editorial-ghost:hover:not(:disabled) {
+  color: var(--color-primary);
+  background-color: var(--color-surface);
+  box-shadow: var(--neu-raised-sm);
+}
+
+.btn-sm {
+  padding: 7px 12px;
+  font-size: 0.75rem;
+  border-radius: var(--radius-xs);
+  gap: 5px;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.editorial-input,
+.editorial-select,
+.editorial-textarea {
+  width: 100%;
+  padding: 11px 14px;
+  font-size: 0.9rem;
+  background-color: var(--color-background);
+  color: var(--color-primary);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--neu-inset);
+  transition: all var(--transition-editorial);
+}
+
+.editorial-input::placeholder,
+.editorial-textarea::placeholder {
+  color: var(--color-muted);
+}
+
+.editorial-input:focus,
+.editorial-select:focus,
+.editorial-textarea:focus {
+  outline: none;
+  background-color: var(--color-surface);
+  border-color: var(--color-accent);
+  box-shadow: var(--neu-inset), 0 0 0 2px rgba(245, 158, 11, 0.25);
+}
+
+/* ==========================================================================
+   Split-Screen Restaurant Discovery Layout
+   ========================================================================== */
+
+.discover-split-layout {
+  display: grid;
+  grid-template-columns: var(--discovery-sidebar-width) minmax(0, 1fr);
+  height: calc(100vh - var(--header-height));
+  overflow: hidden;
+  background-color: var(--color-background);
+}
+
+/* Left Column: Neumorphic Discovery Sidebar */
+.discover-left-column {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-background);
+  box-shadow: 6px 0 20px rgba(45, 22, 84, 0.08);
+  z-index: 10;
+  overflow: hidden;
+}
+
+.discover-scroll-pane {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 18px 28px;
+  gap: 14px;
+}
+
+/* Neumorphic Hero Card inside Left Panel */
+.discover-editorial-masthead {
+  margin: 16px 18px 8px;
+  padding: 18px 20px;
+  border-radius: var(--radius-md);
+  background: var(--neu-purple-surface);
+  color: var(--color-surface-pure);
+  box-shadow: var(--neu-raised);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.discover-editorial-masthead .editorial-kicker {
+  color: var(--color-accent);
+}
+
+.discover-masthead-title {
+  font-family: var(--font-serif);
+  font-size: 1.38rem;
+  font-weight: 700;
+  line-height: 1.18;
+  margin-top: 4px;
+  color: var(--color-surface-pure);
+}
+
+.discover-masthead-sub {
+  font-size: 0.8rem;
+  color: rgba(247, 245, 252, 0.82);
+  margin-top: 5px;
+}
+
+.discover-masthead-art {
+  width: 66px;
+  height: 66px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  box-shadow: inset 2px 2px 5px rgba(45, 22, 84, 0.14);
+  border: 2px solid var(--color-accent);
+  padding: 6px;
+}
+
+/* Search & Category Filter Controls */
+.discover-controls-section {
+  margin: 4px 18px 8px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  box-shadow: var(--neu-raised);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.search-box-editorial {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-box-icon {
+  position: absolute;
+  left: 13px;
+  color: var(--color-primary-mid);
+  pointer-events: none;
+}
+
+.search-box-editorial .editorial-input {
+  padding-left: 38px;
+  padding-right: 36px;
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-secondary);
+}
+
+.search-clear-btn:hover {
+  color: var(--color-primary);
+}
+
+/* Segmented Neumorphic Category Track */
+.category-tabs-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 5px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-background);
+  box-shadow: var(--neu-inset);
+}
+
+.category-tab-btn {
+  padding: 8px 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--color-secondary);
+  border-radius: var(--radius-xs);
+  text-align: center;
+  transition: all var(--transition-editorial);
+}
+
+.category-tab-btn:hover {
+  color: var(--color-primary);
+}
+
+.category-tab-btn.active {
+  background: var(--neu-purple-surface);
+  color: var(--color-surface-pure);
+  box-shadow: 2px 2px 6px rgba(45, 22, 84, 0.25);
+  border-bottom: 2px solid var(--color-accent);
+}
+
+.secondary-filters-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cuisine-select-compact {
+  flex: 1;
+  min-width: 135px;
+  padding: 7px 11px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: var(--radius-xs);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background-color: var(--color-background);
+  box-shadow: var(--neu-inset-sm);
+  color: var(--color-primary);
+}
+
+.filter-toggle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  border-radius: var(--radius-xs);
+  background-color: var(--color-background);
+  box-shadow: var(--neu-raised-sm);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  color: var(--color-secondary);
+  transition: all var(--transition-editorial);
+}
+
+.filter-toggle-chip.active {
+  background: var(--neu-purple-surface);
+  color: var(--color-surface-pure);
+  border-color: var(--color-accent);
+}
+
+.filter-toggle-chip.active svg {
+  color: var(--color-accent);
+}
+
+/* Status & Index Count Bar */
+.discover-status-bar {
+  margin: 0 18px;
+  padding: 8px 14px;
+  border-radius: var(--radius-xs);
+  background-color: var(--color-background);
+  box-shadow: var(--neu-inset-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.76rem;
+  color: var(--color-secondary);
+}
+
+.status-count-strong {
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+/* Neumorphic Restaurant Cards List */
+.editorial-restaurant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.editorial-restaurant-item {
+  padding: 16px 18px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  box-shadow: var(--neu-raised);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 12px;
+  transition: all var(--transition-editorial);
+  cursor: pointer;
+  position: relative;
+}
+
+.editorial-restaurant-item:hover {
+  transform: translateY(-2px);
+  background-color: var(--color-surface-pure);
+}
+
+.editorial-restaurant-item.selected {
+  background-color: var(--color-surface-pure);
+  border: 2px solid var(--color-primary);
+  box-shadow: var(--neu-raised-lg), 0 0 0 3px rgba(245, 158, 11, 0.25);
+}
+
+.restaurant-index-num {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-xs);
+  background-color: var(--color-background);
+  box-shadow: var(--neu-inset-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-primary-mid);
+}
+
+.editorial-restaurant-item.selected .restaurant-index-num {
+  background: var(--neu-purple-surface);
+  color: var(--color-accent);
+  box-shadow: none;
+}
+
+.restaurant-item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.restaurant-item-title {
+  font-family: var(--font-serif);
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1.25;
+}
+
+.restaurant-item-badges {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+/* 10% Warm Amber Gold Accent Badges */
+.editorial-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-background);
+  box-shadow: var(--neu-inset-sm);
+  color: var(--color-secondary);
+}
+
+.editorial-tag-verified {
+  background-color: var(--color-accent-soft);
+  color: var(--color-primary);
+  border: 1px solid var(--color-accent);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.22);
+}
+
+.editorial-tag-verified svg {
+  color: var(--color-accent-deep);
+}
+
+.editorial-tag-menu-link {
+  background: var(--neu-purple-surface);
+  color: var(--color-surface-pure);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  box-shadow: none;
+}
+
+.editorial-tag-menu-link svg {
+  color: var(--color-accent);
+}
+
+.restaurant-item-meta {
+  margin-top: 5px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-primary-mid);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.restaurant-item-address {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: var(--color-secondary);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.restaurant-item-actions {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   Selected Restaurant Inline Neumorphic Folio Drawer
+   ========================================================================== */
+
+.selected-restaurant-folio {
+  background-color: var(--color-surface-pure);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--neu-raised-lg);
+  border: 2px solid var(--color-primary);
+  padding: 20px;
+}
+
+.folio-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: var(--rule-thin);
+  margin-bottom: 14px;
+}
+
+.folio-title {
+  font-family: var(--font-serif);
+  font-size: 1.42rem;
+  font-weight: 700;
+  line-height: 1.18;
+  color: var(--color-primary);
+}
+
+.folio-subtitle {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--color-primary-mid);
+  margin-top: 4px;
+}
+
+.folio-specs-table {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-background);
+  box-shadow: var(--neu-inset);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  font-size: 0.81rem;
+}
+
+.folio-spec-row {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+
+.folio-spec-label {
+  font-size: 0.71rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-secondary);
+}
+
+.folio-spec-value {
+  color: var(--color-primary);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.folio-spec-value a {
+  color: var(--color-primary-mid);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.folio-actions-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 16px;
+}
+
+/* ==========================================================================
+   Map Pane & Custom Dark Purple + Amber Gold Markers
+   ========================================================================== */
+
+.discover-right-map-column {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  background-color: var(--color-paper-alt);
+}
+
+.editorial-leaflet-map {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  background-color: var(--color-background);
+}
+
+/* Soft Lavender-Alabaster map tile tint so Dark Purple & Amber Gold markers pop */
+.editorial-map-tiles {
+  filter: saturate(75%) contrast(102%) brightness(101%) hue-rotate(8deg);
+}
+
+.editorial-marker-icon {
+  background: transparent;
+  border: none;
+}
+
+.marker-pin-svg {
+  filter: drop-shadow(0 4px 7px rgba(45, 22, 84, 0.34));
+  transition: transform 160ms ease-out;
+}
+
+.editorial-marker-selected .marker-pin-svg {
+  transform: scale(1.18) translateY(-3px);
+  filter: drop-shadow(0 6px 12px rgba(245, 158, 11, 0.52));
+}
+
+/* Floating Neumorphic Map Toolbar */
+.map-floating-toolbar {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 800;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.map-toolbar-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--neu-raised);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  padding: 7px 10px;
+}
+
+.map-pick-banner {
+  position: absolute;
+  top: 74px;
+  left: 16px;
+  z-index: 800;
+  background: var(--neu-purple-surface);
+  color: var(--color-surface-pure);
+  border-radius: var(--radius-md);
+  box-shadow: var(--neu-raised-lg);
+  border: 1px solid var(--color-accent);
+  padding: 12px 16px;
+  font-size: 0.81rem;
+  max-width: 440px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* ==========================================================================
+   OSRM Route Navigation Sheet (Neumorphic Dark Purple + White + Amber Card)
+   ========================================================================== */
+
+.osrm-route-panel {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 390px;
+  max-width: calc(100% - 40px);
+  max-height: calc(100% - 96px);
+  z-index: 850;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--neu-raised-lg);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.osrm-route-header {
+  padding: 14px 18px;
+  background: var(--neu-purple-surface);
+  color: var(--color-surface-pure);
+  border-bottom: 2px solid var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.osrm-route-header-title {
+  font-family: var(--font-serif);
+  font-size: 1.04rem;
+  font-weight: 700;
+  color: var(--color-surface-pure);
+}
+
+.osrm-route-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 12px 16px;
+  background-color: var(--color-background);
+}
+
+.osrm-metric-cell {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  box-shadow: var(--neu-raised-sm);
+  border-left: 3px solid var(--color-accent);
+}
+
+.osrm-metric-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-secondary);
+}
+
+.osrm-metric-value {
+  font-family: var(--font-serif);
+  font-size: 1.32rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-top: 2px;
+}
+
+.osrm-route-controls {
+  padding: 10px 16px;
+  border-bottom: var(--rule-thin);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  background-color: var(--color-surface);
+}
+
+.osrm-preset-origins {
+  padding: 12px 16px;
+  border-bottom: var(--rule-thin);
+  background-color: var(--color-background);
+  box-shadow: var(--neu-inset-sm);
+  font-size: 0.77rem;
+}
+
+.osrm-preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.osrm-steps-list {
+  overflow-y: auto;
+  max-height: 230px;
+  padding: 6px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.osrm-step-item {
+  padding: 9px 12px;
+  border-radius: var(--radius-xs);
+  background-color: var(--color-background);
+  box-shadow: var(--neu-inset-sm);
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 0.8rem;
+}
+
+.osrm-step-num {
+  font-family: var(--font-serif);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-accent-deep);
+}
+
+.osrm-step-distance {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--color-primary-mid);
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   Neumorphic Digital Restaurant Menu & Details Page
+   ========================================================================== */
+
+.editorial-page-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.menu-broadsheet {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--neu-raised-lg);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  padding: 28px;
+  position: relative;
+}
+
+.menu-broadsheet-inner-frame {
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+  box-shadow: var(--neu-inset);
+  padding: 28px;
+}
+
+.menu-broadsheet-header {
+  border-bottom: 2px solid rgba(45, 22, 84, 0.14);
+  padding-bottom: 22px;
+  margin-bottom: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: start;
+}
+
+.menu-broadsheet-title {
+  font-family: var(--font-serif);
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1.12;
+  color: var(--color-primary);
+  margin-top: 6px;
+}
+
+.menu-broadsheet-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  padding: 4px 0 24px;
+  border-bottom: var(--rule-thin);
+  margin-bottom: 26px;
+}
+
+.menu-meta-cell {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  box-shadow: var(--neu-raised-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.menu-meta-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-primary-mid);
+}
+
+.menu-meta-label svg {
+  color: var(--color-accent-deep);
+}
+
+.menu-meta-value {
+  font-size: 0.87rem;
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+/* Menu Category Section */
+.menu-category-chapter {
+  margin-bottom: 30px;
+}
+
+.menu-chapter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--neu-purple-surface);
+  color: var(--color-surface-pure);
+  box-shadow: var(--neu-raised-sm);
+  border-left: 4px solid var(--color-accent);
+  margin-bottom: 16px;
+}
+
+.menu-chapter-title {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-surface-pure);
+}
+
+.menu-chapter-count {
+  font-size: 0.73rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+}
+
+.editorial-menu-items-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.editorial-dish-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  box-shadow: var(--neu-raised-sm);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  align-items: center;
+}
+
+/* Keep food photography in natural colors */
+.editorial-dish-photo-frame {
+  width: 92px;
+  height: 92px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-background);
+  box-shadow: var(--neu-inset-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.editorial-dish-photo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: none;
+}
+
+.editorial-dish-topline {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.editorial-dish-name {
+  font-family: var(--font-serif);
+  font-size: 1.06rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.editorial-dish-leader {
+  flex: 1;
+  border-bottom: var(--rule-dotted);
+  min-width: 24px;
+  transform: translateY(-4px);
+}
+
+.editorial-dish-price {
+  font-family: var(--font-serif);
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  background-color: var(--color-accent-soft);
+  border: 1px solid var(--color-accent);
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.editorial-dish-description {
+  font-size: 0.84rem;
+  color: var(--color-secondary);
+  margin-top: 5px;
+}
+
+.editorial-dish-availability {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+}
+
+.editorial-dish-availability.available {
+  color: var(--color-primary);
+  background-color: var(--color-background);
+  box-shadow: var(--neu-inset-sm);
+}
+
+.editorial-dish-availability.unavailable {
+  color: var(--color-muted);
+  background-color: var(--color-background);
+  text-decoration: line-through;
+}
+
+/* Empty & Unavailable States */
+.editorial-empty-state {
+  padding: 36px 24px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  box-shadow: var(--neu-raised);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.editorial-empty-title {
+  font-family: var(--font-serif);
+  font-size: 1.28rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.editorial-empty-copy {
+  font-size: 0.86rem;
+  color: var(--color-secondary);
+  max-width: 440px;
+}
+
+/* ==========================================================================
+   Owner Portal & Reviewer Forms (Neumorphic Cards)
+   ========================================================================== */
+
+.owner-editorial-grid {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.editorial-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--neu-raised);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  padding: 22px;
+}
+
+.editorial-card + .editorial-card {
+  margin-top: 22px;
+}
+
+.editorial-card-header {
+  border-bottom: var(--rule-thin);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.editorial-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.editorial-field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-secondary);
+}
+
+.editorial-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.editorial-alert {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-background);
+  box-shadow: var(--neu-inset);
+  border-left: 4px solid var(--color-accent);
+  font-size: 0.84rem;
+  color: var(--color-primary);
+}
+
+.editorial-status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  border-radius: var(--radius-pill);
+}
+
+.editorial-status-badge.approved {
+  background-color: var(--color-accent-soft);
+  color: var(--color-primary);
+  border: 1px solid var(--color-accent);
+}
+
+.editorial-status-badge.pending {
+  background: var(--neu-purple-surface);
+  color: var(--color-surface-pure);
+}
+
+.editorial-status-badge.rejected {
+  background-color: var(--color-background);
+  color: var(--color-muted);
+  text-decoration: line-through;
+}
+
+.mobile-mode-switcher {
+  display: none;
+}
