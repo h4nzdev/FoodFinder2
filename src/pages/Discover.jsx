@@ -5,6 +5,7 @@ import {
   ChevronUp,
   List,
   Map as MapIcon,
+  Minimize2,
   Navigation,
   RefreshCw,
   RotateCcw,
@@ -67,8 +68,9 @@ export default function Discover() {
   const routing = useRouting(geolocation);
 
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
-  const [mobileMode, setMobileMode] = useState('split'); // 'split' | 'list' | 'map'
+  const [mobileMode, setMobileMode] = useState('split'); // 'split' | 'list' | 'peek' | 'map'
   const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(false);
+  const [searchCardCollapsed, setSearchCardCollapsed] = useState(false);
   const [visibleListLimit, setVisibleListLimit] = useState(LIST_PAGE_SIZE);
   const scrollPaneRef = useRef(null);
 
@@ -91,7 +93,10 @@ export default function Discover() {
 
   const handleSelectRestaurant = (restaurant) => {
     setSelectedRestaurant(restaurant);
-    if (mobileMode === 'map') {
+    // Automatically collapse the filter accordion when selecting a restaurant
+    // so the selected restaurant details are immediately visible at the top
+    setMobileFiltersExpanded(false);
+    if (mobileMode === 'map' || mobileMode === 'peek') {
       setMobileMode('split');
     }
     if (scrollPaneRef.current) {
@@ -101,18 +106,15 @@ export default function Discover() {
 
   const handleGetDirections = (restaurant) => {
     setSelectedRestaurant(restaurant);
+    setMobileFiltersExpanded(false);
     routing.startNavigationTo(restaurant);
     if (typeof window !== 'undefined' && window.innerWidth <= 768) {
       setMobileMode('map');
     }
   };
 
-  const cycleMobileSheetSize = () => {
-    setMobileMode((prev) => {
-      if (prev === 'split') return 'list';
-      if (prev === 'list') return 'map';
-      return 'split';
-    });
+  const toggleShrinkSheet = () => {
+    setMobileMode((prev) => (prev === 'peek' ? 'split' : 'peek'));
   };
 
   const hasActiveFilters =
@@ -120,18 +122,21 @@ export default function Discover() {
     selectedCategory !== 'All' ||
     selectedCuisine !== 'All' ||
     parsedMaxBudget !== null ||
-    onlyVerifiedMenus;
+    onlyVerifiedMenus ||
+    onlyInMapView;
 
   const activeFilterCount =
     (selectedCategory !== 'All' ? 1 : 0) +
     (selectedCuisine !== 'All' ? 1 : 0) +
     (parsedMaxBudget !== null ? 1 : 0) +
     (onlyVerifiedMenus ? 1 : 0) +
-    (!onlyInMapView ? 1 : 0);
+    (onlyInMapView ? 1 : 0);
 
   const hasActiveRoute = Boolean(
     routing.targetRestaurant || routing.route || routing.loading || routing.isPickingOrigin
   );
+
+  const isSheetShrunk = mobileMode === 'peek';
 
   const MastheadIllustration =
     selectedCategory === 'Café'
@@ -147,113 +152,75 @@ export default function Discover() {
         className={`discover-left-column mobile-mode-${mobileMode}`}
         aria-label="Restaurant Discovery Directory"
       >
-        {/* Mobile Tactile Sheet Grab Handle Bar */}
+        {/* Mobile Tactile Sheet Grab Handle Bar with Accordion Shrink Button */}
         <div className="mobile-sheet-grab-bar">
           <button
             type="button"
             className="mobile-sheet-grab-btn"
-            onClick={cycleMobileSheetSize}
-            aria-label="Toggle bottom sheet height"
+            onClick={toggleShrinkSheet}
+            aria-label={isSheetShrunk ? 'Expand restaurant panel' : 'Shrink restaurant panel'}
           >
             <span className="mobile-sheet-pill" aria-hidden="true" />
             <span className="mobile-sheet-grab-title">
               {selectedRestaurant
                 ? selectedRestaurant.name
-                : `${filteredRestaurants.length} Cebu City Establishments`}
+                : `${filteredRestaurants.length} Cebu City Places`}
             </span>
           </button>
 
-          <button
-            type="button"
-            className={`btn-editorial btn-sm mobile-filter-toggle-btn ${
-              mobileFiltersExpanded || activeFilterCount > 0 ? 'btn-editorial-ink' : ''
-            }`}
-            onClick={() => setMobileFiltersExpanded((prev) => !prev)}
-            aria-expanded={mobileFiltersExpanded}
-          >
-            <SlidersHorizontal size={12} aria-hidden="true" />
-            <span>Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</span>
-            {mobileFiltersExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            <button
+              type="button"
+              className={`btn-editorial btn-sm mobile-filter-toggle-btn ${
+                mobileFiltersExpanded || activeFilterCount > 0 ? 'btn-editorial-ink' : ''
+              }`}
+              onClick={() => {
+                if (isSheetShrunk) setMobileMode('split');
+                setSearchCardCollapsed(false);
+                setMobileFiltersExpanded((prev) => !prev);
+              }}
+              aria-expanded={mobileFiltersExpanded}
+            >
+              <SlidersHorizontal size={12} aria-hidden="true" />
+              <span>Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</span>
+              {mobileFiltersExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            </button>
+
+            <button
+              type="button"
+              className="btn-editorial btn-sm"
+              onClick={toggleShrinkSheet}
+              aria-label={isSheetShrunk ? 'Expand card up' : 'Shrink card down'}
+              title={isSheetShrunk ? 'Expand card up' : 'Shrink card down'}
+            >
+              {isSheetShrunk ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+          </div>
         </div>
 
-        {/* Desktop Masthead */}
-        <div className="discover-editorial-masthead">
-          <div>
-            <span className="editorial-kicker">Cebu City Field Guide</span>
-            <h1 className="discover-masthead-title">
-              Local Tables, Menus &amp; Road Routes
-            </h1>
-            <p className="discover-masthead-sub">
-              Live OpenStreetMap establishments, verified menus in ₱, max budget filter, and OSRM street directions.
-            </p>
-          </div>
-          <div className="discover-masthead-art">
-            <MastheadIllustration size={48} />
-          </div>
-        </div>
-
-        {/* Search, Category & Max Budget (₱) Controls */}
-        <div
-          className={`discover-controls-section ${
-            mobileFiltersExpanded ? 'mobile-filters-open' : ''
-          }`}
-        >
-          <div className="search-box-editorial">
-            <Search size={16} className="search-box-icon" aria-hidden="true" />
-            <input
-              type="text"
-              className="editorial-input"
-              aria-label="Search restaurants, dishes, cuisines, or streets in Cebu City"
-              placeholder="Search Jollibee, Lechon, Siomai, Café, or dish…"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                className="search-clear-btn"
-                onClick={() => setSearchQuery('')}
-                aria-label="Clear search query"
-              >
-                <X size={15} />
-              </button>
-            )}
+        {/* Unified Scrollable Pane: Search/Filters Accordion + Status Bar + Selected Restaurant + List */}
+        <div ref={scrollPaneRef} className="discover-scroll-pane">
+          {/* Desktop Masthead */}
+          <div className="discover-editorial-masthead">
+            <div>
+              <span className="editorial-kicker">Cebu City Field Guide</span>
+              <h1 className="discover-masthead-title">
+                Local Tables, Menus &amp; Road Routes
+              </h1>
+              <p className="discover-masthead-sub">
+                Live OpenStreetMap establishments, verified menus in ₱, max budget filter, and OSRM street directions.
+              </p>
+            </div>
+            <div className="discover-masthead-art">
+              <MastheadIllustration size={48} />
+            </div>
           </div>
 
+          {/* Search, Category & Max Budget (₱) Controls Card with Accordion Shrink Toggle */}
           <div
-            className="category-tabs-bar"
-            role="tablist"
-            aria-label="Establishment category filter"
-          >
-            {CATEGORIES.map((category) => (
-              <button
-                key={category}
-                type="button"
-                role="tab"
-                aria-selected={selectedCategory === category}
-                className={`category-tab-btn ${
-                  selectedCategory === category ? 'active' : ''
-                }`}
-                onClick={() => setSelectedCategory(category)}
-              >
-                {category === 'All' ? 'All Places' : category}
-              </button>
-            ))}
-          </div>
-
-          {/* MAX BUDGET (₱) FILTER ROW */}
-          <div
-            className="budget-filter-row"
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '7px',
-              padding: '9px 11px',
-              borderRadius: 'var(--radius-sm)',
-              backgroundColor: 'var(--color-background)',
-              boxShadow: 'var(--neu-inset-sm)',
-            }}
+            className={`discover-controls-section ${
+              mobileFiltersExpanded ? 'mobile-filters-open' : ''
+            } ${searchCardCollapsed ? 'controls-card-shrunk' : ''}`}
           >
             <div
               style={{
@@ -261,162 +228,265 @@ export default function Discover() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 gap: '8px',
-                flexWrap: 'wrap',
               }}
             >
-              <label
-                htmlFor="max-budget-input"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '0.73rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  color: 'var(--color-primary)',
-                }}
-              >
-                <Wallet size={13} color="var(--color-accent-deep)" aria-hidden="true" />
-                <span>Max Dish Budget (₱):</span>
-              </label>
+              <span className="editorial-kicker" style={{ fontSize: '0.67rem' }}>
+                Search &amp; Filter Controls
+                {activeFilterCount > 0 ? ` · ${activeFilterCount} Active` : ''}
+              </span>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <input
-                  id="max-budget-input"
-                  type="number"
-                  min="0"
-                  step="10"
-                  placeholder="Any ₱"
-                  value={maxBudget}
-                  onChange={(event) => setMaxBudget(event.target.value)}
-                  style={{
-                    width: '96px',
-                    padding: '4px 8px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    borderRadius: '8px',
-                    border: '1px solid rgba(45, 22, 84, 0.2)',
-                    backgroundColor: 'var(--color-surface-pure)',
-                    color: 'var(--color-primary)',
-                  }}
-                />
-                {maxBudget && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                {mobileFiltersExpanded && (
                   <button
                     type="button"
                     className="btn-editorial btn-sm"
-                    onClick={() => setMaxBudget('')}
-                    style={{ padding: '4px 8px' }}
-                    aria-label="Clear max budget filter"
+                    onClick={() => setMobileFiltersExpanded(false)}
+                    style={{ padding: '4px 8px', fontSize: '0.68rem' }}
                   >
-                    <X size={12} />
+                    <Minimize2 size={11} aria-hidden="true" />
+                    <span>Hide Filters</span>
                   </button>
                 )}
+
+                <button
+                  type="button"
+                  className="btn-editorial btn-sm"
+                  onClick={() => setSearchCardCollapsed((prev) => !prev)}
+                  aria-expanded={!searchCardCollapsed}
+                  aria-label={
+                    searchCardCollapsed ? 'Expand search and filter card' : 'Shrink search and filter card'
+                  }
+                  title={
+                    searchCardCollapsed ? 'Expand search and filter card' : 'Shrink search and filter card'
+                  }
+                  style={{ padding: '4px 8px' }}
+                >
+                  {searchCardCollapsed ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                </button>
               </div>
             </div>
 
-            <div
-              style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}
-              role="group"
-              aria-label="Quick Max Budget Presets"
-            >
-              {BUDGET_PRESETS.map((preset) => {
-                const isActive = String(maxBudget) === preset.value;
-                return (
-                  <button
-                    key={preset.label}
-                    type="button"
-                    onClick={() => setMaxBudget(preset.value)}
-                    className={`filter-toggle-chip ${isActive ? 'active' : ''}`}
-                    style={{ padding: '4px 9px', fontSize: '0.7rem', flex: 1 }}
+            {!searchCardCollapsed && (
+              <>
+                <div className="search-box-editorial">
+                  <Search size={16} className="search-box-icon" aria-hidden="true" />
+                  <input
+                    type="text"
+                    className="editorial-input"
+                    aria-label="Search restaurants, dishes, cuisines, or streets in Cebu City"
+                    placeholder="Search Jollibee, Lechon, Siomai, Café, or dish…"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      className="search-clear-btn"
+                      onClick={() => setSearchQuery('')}
+                      aria-label="Clear search query"
+                    >
+                      <X size={15} />
+                    </button>
+                  )}
+                </div>
+
+                <div
+                  className="category-tabs-bar"
+                  role="tablist"
+                  aria-label="Establishment category filter"
+                >
+                  {CATEGORIES.map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      role="tab"
+                      aria-selected={selectedCategory === category}
+                      className={`category-tab-btn ${
+                        selectedCategory === category ? 'active' : ''
+                      }`}
+                      onClick={() => setSelectedCategory(category)}
+                    >
+                      {category === 'All' ? 'All Places' : category}
+                    </button>
+                  ))}
+                </div>
+
+                {/* MAX BUDGET (₱) FILTER ROW */}
+                <div
+                  className="budget-filter-row"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '7px',
+                    padding: '9px 11px',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: 'var(--color-background)',
+                    boxShadow: 'var(--neu-inset-sm)',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '8px',
+                      flexWrap: 'wrap',
+                    }}
                   >
-                    <span>{preset.label}</span>
+                    <label
+                      htmlFor="max-budget-input"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '0.73rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                        color: 'var(--color-primary)',
+                      }}
+                    >
+                      <Wallet size={13} color="var(--color-accent-deep)" aria-hidden="true" />
+                      <span>Max Dish Budget (₱):</span>
+                    </label>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <input
+                        id="max-budget-input"
+                        type="number"
+                        min="0"
+                        step="10"
+                        placeholder="Any ₱"
+                        value={maxBudget}
+                        onChange={(event) => setMaxBudget(event.target.value)}
+                        style={{
+                          width: '96px',
+                          padding: '4px 8px',
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                          borderRadius: '8px',
+                          border: '1px solid rgba(45, 22, 84, 0.2)',
+                          backgroundColor: 'var(--color-surface-pure)',
+                          color: 'var(--color-primary)',
+                        }}
+                      />
+                      {maxBudget && (
+                        <button
+                          type="button"
+                          className="btn-editorial btn-sm"
+                          onClick={() => setMaxBudget('')}
+                          style={{ padding: '4px 8px' }}
+                          aria-label="Clear max budget filter"
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div
+                    style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}
+                    role="group"
+                    aria-label="Quick Max Budget Presets"
+                  >
+                    {BUDGET_PRESETS.map((preset) => {
+                      const isActive = String(maxBudget) === preset.value;
+                      return (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => setMaxBudget(preset.value)}
+                          className={`filter-toggle-chip ${isActive ? 'active' : ''}`}
+                          style={{ padding: '4px 9px', fontSize: '0.7rem', flex: 1 }}
+                        >
+                          <span>{preset.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="secondary-filters-row">
+                  <select
+                    aria-label="Filter by cuisine"
+                    className="cuisine-select-compact"
+                    value={selectedCuisine}
+                    onChange={(event) => setSelectedCuisine(event.target.value)}
+                  >
+                    <option value="All">All Cuisines</option>
+                    {availableCuisines.map((cuisine) => (
+                      <option key={cuisine} value={cuisine}>
+                        {cuisine}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="button"
+                    className={`filter-toggle-chip ${onlyVerifiedMenus ? 'active' : ''}`}
+                    aria-pressed={onlyVerifiedMenus}
+                    onClick={() => setOnlyVerifiedMenus((prev) => !prev)}
+                  >
+                    <ShieldCheck size={12} aria-hidden="true" />
+                    <span>Has Menu</span>
                   </button>
-                );
-              })}
+
+                  <button
+                    type="button"
+                    className={`filter-toggle-chip ${onlyInMapView ? 'active' : ''}`}
+                    aria-pressed={onlyInMapView}
+                    onClick={() => setOnlyInMapView((prev) => !prev)}
+                    title="Filter list by visible map boundaries"
+                  >
+                    <span>In Map Bounds</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Status Bar */}
+          <div className="discover-status-bar" role="status" aria-live="polite">
+            <span>
+              {loading ? (
+                'Syncing Cebu City establishments…'
+              ) : (
+                <>
+                  Matching{' '}
+                  <span className="status-count-strong">
+                    {filteredRestaurants.length}
+                  </span>{' '}
+                  of {allRestaurants.length} places
+                  {parsedMaxBudget !== null && ` (≤ ₱${parsedMaxBudget})`}
+                </>
+              )}
+            </span>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="btn-editorial btn-sm"
+                >
+                  <RotateCcw size={11} aria-hidden="true" />
+                  <span>Reset</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={retry}
+                disabled={loading}
+                className="btn-editorial btn-editorial-ghost btn-sm"
+                title="Refresh restaurant listings"
+              >
+                <RefreshCw size={11} aria-hidden="true" />
+                <span>Sync</span>
+              </button>
             </div>
           </div>
 
-          <div className="secondary-filters-row">
-            <select
-              aria-label="Filter by cuisine"
-              className="cuisine-select-compact"
-              value={selectedCuisine}
-              onChange={(event) => setSelectedCuisine(event.target.value)}
-            >
-              <option value="All">All Cuisines</option>
-              {availableCuisines.map((cuisine) => (
-                <option key={cuisine} value={cuisine}>
-                  {cuisine}
-                </option>
-              ))}
-            </select>
-
-            <button
-              type="button"
-              className={`filter-toggle-chip ${onlyVerifiedMenus ? 'active' : ''}`}
-              aria-pressed={onlyVerifiedMenus}
-              onClick={() => setOnlyVerifiedMenus((prev) => !prev)}
-            >
-              <ShieldCheck size={12} aria-hidden="true" />
-              <span>Has Menu</span>
-            </button>
-
-            <button
-              type="button"
-              className={`filter-toggle-chip ${onlyInMapView ? 'active' : ''}`}
-              aria-pressed={onlyInMapView}
-              onClick={() => setOnlyInMapView((prev) => !prev)}
-              title="Filter list by visible map boundaries"
-            >
-              <span>In Map Bounds</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Status Bar */}
-        <div className="discover-status-bar" role="status" aria-live="polite">
-          <span>
-            {loading ? (
-              'Syncing Cebu City establishments…'
-            ) : (
-              <>
-                Matching{' '}
-                <span className="status-count-strong">
-                  {filteredRestaurants.length}
-                </span>{' '}
-                of {allRestaurants.length} places
-                {parsedMaxBudget !== null && ` (≤ ₱${parsedMaxBudget})`}
-              </>
-            )}
-          </span>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="btn-editorial btn-sm"
-              >
-                <RotateCcw size={11} aria-hidden="true" />
-                <span>Reset</span>
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={retry}
-              disabled={loading}
-              className="btn-editorial btn-editorial-ghost btn-sm"
-              title="Refresh restaurant listings"
-            >
-              <RefreshCw size={11} aria-hidden="true" />
-              <span>Sync</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Scrollable Pane: Selected Restaurant Folio + Restaurant Directory List */}
-        <div ref={scrollPaneRef} className="discover-scroll-pane">
+          {/* Selected Restaurant Folio (with Accordion Shrink Option) */}
           {selectedRestaurant && (
             <SelectedRestaurantPanel
               restaurant={selectedRestaurant}
@@ -536,8 +606,10 @@ export default function Discover() {
 
         <button
           type="button"
-          className={`mobile-mode-btn ${mobileMode === 'split' ? 'active' : ''}`}
-          onClick={() => setMobileMode('split')}
+          className={`mobile-mode-btn ${
+            mobileMode === 'split' || mobileMode === 'peek' ? 'active' : ''
+          }`}
+          onClick={() => setMobileMode((prev) => (prev === 'split' ? 'peek' : 'split'))}
         >
           <BookOpen size={14} aria-hidden="true" />
           <span>{selectedRestaurant ? 'Selected' : 'Split'}</span>

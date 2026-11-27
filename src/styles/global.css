@@ -386,6 +386,7 @@ ol {
 /* Left Column: Neumorphic Discovery Sidebar */
 .discover-left-column {
   height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background-color: var(--color-background);
@@ -395,17 +396,21 @@ ol {
 }
 
 .discover-scroll-pane {
-  flex: 1;
+  flex: 1 1 0%;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   display: flex;
   flex-direction: column;
   padding: 14px 18px 28px;
-  gap: 14px;
+  gap: 12px;
 }
 
 /* Neumorphic Hero Card inside Left Panel */
 .discover-editorial-masthead {
-  margin: 16px 18px 8px;
+  margin: 0;
   padding: 18px 20px;
   border-radius: var(--radius-md);
   background: var(--neu-purple-surface);
@@ -416,6 +421,7 @@ ol {
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: 14px;
+  flex-shrink: 0;
 }
 
 .discover-editorial-masthead .editorial-kicker {
@@ -452,15 +458,16 @@ ol {
 
 /* Search & Category Filter Controls */
 .discover-controls-section {
-  margin: 4px 18px 8px;
-  padding: 14px 16px;
+  margin: 0;
+  padding: 12px 14px;
   border-radius: var(--radius-md);
   background-color: var(--color-surface);
   box-shadow: var(--neu-raised);
   border: 1px solid rgba(255, 255, 255, 0.8);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .search-box-editorial {
@@ -578,7 +585,7 @@ ol {
 
 /* Status & Index Count Bar */
 .discover-status-bar {
-  margin: 0 18px;
+  margin: 0;
   padding: 8px 14px;
   border-radius: var(--radius-xs);
   background-color: var(--color-background);
@@ -589,6 +596,7 @@ ol {
   gap: 10px;
   font-size: 0.76rem;
   color: var(--color-secondary);
+  flex-shrink: 0;
 }
 
 .status-count-strong {
