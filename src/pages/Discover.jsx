@@ -11,6 +11,7 @@ import {
   Search,
   ShieldCheck,
   SlidersHorizontal,
+  Wallet,
   X,
 } from 'lucide-react';
 import { useRestaurants } from '../hooks/useRestaurants';
@@ -28,6 +29,13 @@ import {
 } from '../assets/illustrations/EditorialIllustrations';
 
 const CATEGORIES = ['All', 'Restaurant', 'Café', 'Fast Food'];
+const BUDGET_PRESETS = [
+  { label: 'Any', value: '' },
+  { label: '≤ ₱100', value: '100' },
+  { label: '≤ ₱150', value: '150' },
+  { label: '≤ ₱250', value: '250' },
+  { label: '≤ ₱400', value: '400' },
+];
 const LIST_PAGE_SIZE = 40;
 
 export default function Discover() {
@@ -43,6 +51,9 @@ export default function Discover() {
     setSelectedCategory,
     selectedCuisine,
     setSelectedCuisine,
+    maxBudget,
+    setMaxBudget,
+    parsedMaxBudget,
     onlyVerifiedMenus,
     setOnlyVerifiedMenus,
     onlyInMapView,
@@ -63,7 +74,14 @@ export default function Discover() {
 
   useEffect(() => {
     setVisibleListLimit(LIST_PAGE_SIZE);
-  }, [searchQuery, selectedCategory, selectedCuisine, onlyVerifiedMenus, onlyInMapView]);
+  }, [
+    searchQuery,
+    selectedCategory,
+    selectedCuisine,
+    maxBudget,
+    onlyVerifiedMenus,
+    onlyInMapView,
+  ]);
 
   const displayedListRestaurants = filteredRestaurants.slice(0, visibleListLimit);
   const remainingListCount = Math.max(
@@ -84,8 +102,6 @@ export default function Discover() {
   const handleGetDirections = (restaurant) => {
     setSelectedRestaurant(restaurant);
     routing.startNavigationTo(restaurant);
-    // On mobile viewports, automatically switch to Map view so the OSRM route
-    // and turn-by-turn navigation panel are immediately visible without sheet overlap
     if (typeof window !== 'undefined' && window.innerWidth <= 768) {
       setMobileMode('map');
     }
@@ -103,11 +119,13 @@ export default function Discover() {
     Boolean(searchQuery.trim()) ||
     selectedCategory !== 'All' ||
     selectedCuisine !== 'All' ||
+    parsedMaxBudget !== null ||
     onlyVerifiedMenus;
 
   const activeFilterCount =
     (selectedCategory !== 'All' ? 1 : 0) +
     (selectedCuisine !== 'All' ? 1 : 0) +
+    (parsedMaxBudget !== null ? 1 : 0) +
     (onlyVerifiedMenus ? 1 : 0) +
     (!onlyInMapView ? 1 : 0);
 
@@ -159,7 +177,7 @@ export default function Discover() {
           </button>
         </div>
 
-        {/* Desktop Masthead (Hidden on compact mobile sheet to maximize scrollable content) */}
+        {/* Desktop Masthead */}
         <div className="discover-editorial-masthead">
           <div>
             <span className="editorial-kicker">Cebu City Field Guide</span>
@@ -167,7 +185,7 @@ export default function Discover() {
               Local Tables, Menus &amp; Road Routes
             </h1>
             <p className="discover-masthead-sub">
-              Live OpenStreetMap establishments, verified owner menus in ₱, and OSRM street directions.
+              Live OpenStreetMap establishments, verified menus in ₱, max budget filter, and OSRM street directions.
             </p>
           </div>
           <div className="discover-masthead-art">
@@ -175,7 +193,7 @@ export default function Discover() {
           </div>
         </div>
 
-        {/* Search & Category Controls (Collapsible on Mobile) */}
+        {/* Search, Category & Max Budget (₱) Controls */}
         <div
           className={`discover-controls-section ${
             mobileFiltersExpanded ? 'mobile-filters-open' : ''
@@ -186,8 +204,8 @@ export default function Discover() {
             <input
               type="text"
               className="editorial-input"
-              aria-label="Search restaurants, cuisines, or streets in Cebu City"
-              placeholder="Search restaurant name, cuisine, or street…"
+              aria-label="Search restaurants, dishes, cuisines, or streets in Cebu City"
+              placeholder="Search Jollibee, Lechon, Siomai, Café, or dish…"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
             />
@@ -222,6 +240,101 @@ export default function Discover() {
                 {category === 'All' ? 'All Places' : category}
               </button>
             ))}
+          </div>
+
+          {/* MAX BUDGET (₱) FILTER ROW */}
+          <div
+            className="budget-filter-row"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '7px',
+              padding: '9px 11px',
+              borderRadius: 'var(--radius-sm)',
+              backgroundColor: 'var(--color-background)',
+              boxShadow: 'var(--neu-inset-sm)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '8px',
+                flexWrap: 'wrap',
+              }}
+            >
+              <label
+                htmlFor="max-budget-input"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '0.73rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  color: 'var(--color-primary)',
+                }}
+              >
+                <Wallet size={13} color="var(--color-accent-deep)" aria-hidden="true" />
+                <span>Max Dish Budget (₱):</span>
+              </label>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input
+                  id="max-budget-input"
+                  type="number"
+                  min="0"
+                  step="10"
+                  placeholder="Any ₱"
+                  value={maxBudget}
+                  onChange={(event) => setMaxBudget(event.target.value)}
+                  style={{
+                    width: '96px',
+                    padding: '4px 8px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    borderRadius: '8px',
+                    border: '1px solid rgba(45, 22, 84, 0.2)',
+                    backgroundColor: 'var(--color-surface-pure)',
+                    color: 'var(--color-primary)',
+                  }}
+                />
+                {maxBudget && (
+                  <button
+                    type="button"
+                    className="btn-editorial btn-sm"
+                    onClick={() => setMaxBudget('')}
+                    style={{ padding: '4px 8px' }}
+                    aria-label="Clear max budget filter"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div
+              style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}
+              role="group"
+              aria-label="Quick Max Budget Presets"
+            >
+              {BUDGET_PRESETS.map((preset) => {
+                const isActive = String(maxBudget) === preset.value;
+                return (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => setMaxBudget(preset.value)}
+                    className={`filter-toggle-chip ${isActive ? 'active' : ''}`}
+                    style={{ padding: '4px 9px', fontSize: '0.7rem', flex: 1 }}
+                  >
+                    <span>{preset.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="secondary-filters-row">
@@ -273,6 +386,7 @@ export default function Discover() {
                   {filteredRestaurants.length}
                 </span>{' '}
                 of {allRestaurants.length} places
+                {parsedMaxBudget !== null && ` (≤ ₱${parsedMaxBudget})`}
               </>
             )}
           </span>
@@ -331,10 +445,11 @@ export default function Discover() {
           {!loading && !error && filteredRestaurants.length === 0 && (
             <div className="editorial-empty-state">
               <StorefrontIllustration size={72} />
-              <h2 className="editorial-empty-title">No Establishments in View</h2>
+              <h2 className="editorial-empty-title">No Establishments Match Filter</h2>
               <p className="editorial-empty-copy">
-                No restaurants, cafés, or fast-food spots matched your current map
-                boundaries and filters. Try zooming out on Cebu City or resetting filters.
+                {parsedMaxBudget !== null
+                  ? `No restaurants with verified menu items at or under ₱${parsedMaxBudget} were found in this view. Try increasing your max budget or resetting filters.`
+                  : 'No restaurants, cafés, or fast-food spots matched your current map boundaries and filters.'}
               </p>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
                 {hasActiveFilters && (
@@ -367,6 +482,7 @@ export default function Discover() {
                 restaurant={restaurant}
                 index={index}
                 isSelected={selectedRestaurant?.id === restaurant.id}
+                maxBudget={parsedMaxBudget}
                 onSelect={handleSelectRestaurant}
                 onGetDirections={handleGetDirections}
               />

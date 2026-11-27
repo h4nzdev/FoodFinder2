@@ -38,19 +38,35 @@
     font-size: 1.05rem;
   }
 
-  .brand-subline {
-    display: none;
+  .brand-subline,
+  .hide-on-mobile-nav {
+    display: none !important;
+  }
+
+  /* Guarantee all buttons, links, and toolbar items stay strictly inline (1 line) */
+  button,
+  .btn-editorial,
+  .editorial-nav-link,
+  .category-tab-btn,
+  .filter-toggle-chip,
+  .mobile-mode-btn,
+  .editorial-tag,
+  .map-toolbar-group,
+  .map-pin-count-text,
+  .map-pin-cap-label {
+    white-space: nowrap !important;
+    flex-wrap: nowrap !important;
   }
 
   .editorial-nav {
-    gap: 6px;
+    gap: 5px;
   }
 
   .editorial-nav-link {
-    padding: 7px 10px;
-    font-size: 0.73rem;
-    border-radius: 10px;
-    gap: 5px;
+    padding: 6px 9px;
+    font-size: 0.72rem;
+    border-radius: 9px;
+    gap: 4px;
   }
 
   /* Split-Screen transitions to Map-First + Flexible Bottom Sheet */
@@ -68,19 +84,42 @@
     width: 100%;
   }
 
-  /* Floating Map Toolbar on Mobile */
+  /* Floating Map Toolbar on Mobile — Single Inline Row */
   .map-floating-toolbar {
-    top: 10px;
-    left: 10px;
-    right: 10px;
+    top: 8px;
+    left: 8px;
+    right: 8px;
     gap: 6px;
     align-items: center;
+    flex-wrap: nowrap;
   }
 
   .map-toolbar-group {
+    padding: 4px 6px;
+    gap: 5px;
+    border-radius: 11px;
+  }
+
+  .map-toolbar-group .btn-editorial.btn-sm {
     padding: 5px 8px;
+    font-size: 0.7rem;
+    gap: 4px;
+  }
+
+  .map-pin-cap-group {
+    font-size: 0.7rem;
+    padding: 4px 7px;
     gap: 6px;
-    border-radius: 12px;
+  }
+
+  .map-pin-cap-label {
+    padding-left: 6px;
+    gap: 3px;
+  }
+
+  .map-pin-cap-select {
+    font-size: 0.69rem;
+    padding: 2px 3px;
   }
 
   /* Move Zoom Dock to Top-Right on Mobile so Bottom Sheet Never Covers It */
@@ -201,16 +240,18 @@
   }
 
   .discover-controls-section .category-tabs-bar,
+  .discover-controls-section .budget-filter-row,
   .discover-controls-section .secondary-filters-row {
-    display: none;
+    display: none !important;
   }
 
   .discover-controls-section.mobile-filters-open .category-tabs-bar {
-    display: grid;
+    display: grid !important;
   }
 
+  .discover-controls-section.mobile-filters-open .budget-filter-row,
   .discover-controls-section.mobile-filters-open .secondary-filters-row {
-    display: flex;
+    display: flex !important;
   }
 
   .discover-status-bar {

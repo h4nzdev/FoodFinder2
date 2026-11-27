@@ -110,14 +110,10 @@ function selectPrioritizedViewportMarkers(restaurants, viewport, maxPins, select
     ({ lat, lon }) => lat >= south && lat <= north && lon >= west && lon <= east
   );
 
-  const totalInView = inView.length;
-  if (totalInView <= maxPins) {
-    const list = [...inView];
-    if (selectedRestaurant && !list.some((item) => item.id === selectedRestaurant.id)) {
-      list.push(selectedRestaurant);
-    }
-    return { markers: list, totalInView, isCapped: false };
-  }
+  // If the user zoomed tightly into a residential block with 0 pins inside the small box,
+  // fall back to showing the nearest Cebu City restaurants so the map is never empty
+  const candidatePool = inView.length > 0 ? inView : restaurants;
+  const totalInView = candidatePool.length;
 
   const centerLat = (south + north) / 2;
   const centerLon = (west + east) / 2;
@@ -126,18 +122,29 @@ function selectPrioritizedViewportMarkers(restaurants, viewport, maxPins, select
   const distSq = (item) =>
     (item.lat - centerLat) ** 2 + ((item.lon - centerLon) * lonScale) ** 2;
 
-  const sorted = [...inView].sort((a, b) => {
+  if (totalInView <= maxPins && inView.length > 0) {
+    const list = [...candidatePool];
+    if (selectedRestaurant && !list.some((item) => item.id === selectedRestaurant.id)) {
+      list.push(selectedRestaurant);
+    }
+    return { markers: list, totalInView, isCapped: false };
+  }
+
+  const sorted = [...candidatePool].sort((a, b) => {
     if (selectedRestaurant) {
       if (a.id === selectedRestaurant.id) return -1;
       if (b.id === selectedRestaurant.id) return 1;
     }
-    const aMenu = a.hasPublishedMenu ? 2 : a.hasExternalMenu ? 1 : 0;
-    const bMenu = b.hasPublishedMenu ? 2 : b.hasExternalMenu ? 1 : 0;
-    if (aMenu !== bMenu) return bMenu - aMenu;
+    if (inView.length > 0) {
+      const aMenu = a.hasPublishedMenu ? 2 : a.hasExternalMenu ? 1 : 0;
+      const bMenu = b.hasPublishedMenu ? 2 : b.hasExternalMenu ? 1 : 0;
+      if (aMenu !== bMenu) return bMenu - aMenu;
+    }
     return distSq(a) - distSq(b);
   });
 
-  const sliced = sorted.slice(0, maxPins);
+  const capCount = inView.length > 0 ? maxPins : Math.min(20, maxPins);
+  const sliced = sorted.slice(0, capCount);
   if (selectedRestaurant && !sliced.some((item) => item.id === selectedRestaurant.id)) {
     sliced[sliced.length - 1] = selectedRestaurant;
   }
@@ -145,7 +152,7 @@ function selectPrioritizedViewportMarkers(restaurants, viewport, maxPins, select
   return {
     markers: sliced,
     totalInView,
-    isCapped: true,
+    isCapped: totalInView > capCount,
   };
 }
 
@@ -176,10 +183,14 @@ function MapViewportSynchronizer({ selectedRestaurant, route, userLocation }) {
 
   useEffect(() => {
     if (route?.positions?.length >= 2) {
+      map.closePopup();
       const bounds = latLngBounds(route.positions);
+      const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
       map.fitBounds(bounds, {
-        padding: [56, 56],
+        paddingTopLeft: [36, 72],
+        paddingBottomRight: [36, isMobile ? 255 : 110],
         maxZoom: 17,
+        animate: true,
       });
     }
   }, [map, route]);
@@ -248,6 +259,7 @@ const RestaurantMapMarker = memo(function RestaurantMapMarker({
   onSelect,
   onGetDirections,
 }) {
+  const map = useMap();
   const icon = getCachedRestaurantMarkerIcon({
     isSelected,
     hasMenu: restaurant.hasPublishedMenu || restaurant.hasExternalMenu,
@@ -264,7 +276,7 @@ const RestaurantMapMarker = memo(function RestaurantMapMarker({
       }}
     >
       <Popup autoPan={false}>
-        <div style={{ minWidth: '190px', fontFamily: 'var(--font-sans)' }}>
+        <div style={{ minWidth: '185px', fontFamily: 'var(--font-sans)' }}>
           <span
             style={{
               fontSize: '0.66rem',
@@ -297,6 +309,7 @@ const RestaurantMapMarker = memo(function RestaurantMapMarker({
               type="button"
               className="btn-editorial btn-editorial-ink btn-sm"
               onClick={() => {
+                map.closePopup();
                 onSelect(restaurant);
                 onGetDirections(restaurant);
               }}
@@ -307,7 +320,10 @@ const RestaurantMapMarker = memo(function RestaurantMapMarker({
             <button
               type="button"
               className="btn-editorial btn-sm"
-              onClick={() => onSelect(restaurant)}
+              onClick={() => {
+                map.closePopup();
+                onSelect(restaurant);
+              }}
             >
               <span>View Menu</span>
             </button>
@@ -379,7 +395,7 @@ export default function DiscoveryMap({
       style={{ cursor: routing.isPickingOrigin ? 'crosshair' : 'default' }}
     >
       <div className="map-floating-toolbar">
-        <div className="map-toolbar-group">
+        <div className="map-toolbar-group map-actions-inline">
           <button
             type="button"
             className="btn-editorial btn-sm"
@@ -391,8 +407,8 @@ export default function DiscoveryMap({
               {geolocation.locating
                 ? 'Locating…'
                 : geolocation.activeLocation
-                  ? 'Update My Location'
-                  : 'Use My Location'}
+                  ? 'My Location'
+                  : 'Use Location'}
             </span>
           </button>
 
@@ -406,66 +422,33 @@ export default function DiscoveryMap({
           >
             <Crosshair size={13} aria-hidden="true" />
             <span>
-              {routing.isPickingOrigin ? 'Cancel Map Pick' : 'Set Start Point'}
+              {routing.isPickingOrigin ? 'Cancel Pick' : 'Start Point'}
             </span>
           </button>
         </div>
 
-        {/* Map Pin Limitation Controls to Prevent Lag */}
-        <div
-          className="map-toolbar-group map-pin-cap-group"
-          style={{ fontSize: '0.73rem', padding: '5px 10px', gap: '8px' }}
-        >
-          <span role="status">
-            {isCapped ? (
-              <>
-                <strong>{displayedMarkers.length}</strong>/<strong>{totalInView}</strong> pins
-                <em className="hide-on-mobile-compact" style={{ color: 'var(--color-secondary)', marginLeft: '4px' }}>
-                  · Zoom in for more
-                </em>
-              </>
-            ) : (
-              <>
-                <strong>{displayedMarkers.length}</strong>{' '}
-                {displayedMarkers.length === 1 ? 'pin' : 'pins'}
-              </>
-            )}
+        {/* Map Pin Limitation Controls to Prevent Lag (Always single-line inline) */}
+        <div className="map-toolbar-group map-pin-cap-group">
+          <span role="status" className="map-pin-count-text">
+            <strong>{displayedMarkers.length}</strong>
+            {isCapped ? `/${totalInView}` : ''} Pins
           </span>
 
           <label
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              borderLeft: 'var(--rule-thin)',
-              paddingLeft: '8px',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-              fontSize: '0.68rem',
-              color: 'var(--color-secondary)',
-            }}
+            className="map-pin-cap-label"
             title="Limit maximum pins rendered on the map to prevent browser lag"
           >
             <SlidersHorizontal size={11} aria-hidden="true" />
-            <span className="hide-on-mobile-compact">Cap:</span>
+            <span className="hide-on-mobile-nav">Cap:</span>
             <select
               aria-label="Maximum map pins displayed"
               value={pinLimit}
               onChange={(event) => setPinLimit(Number(event.target.value))}
-              style={{
-                border: 'var(--rule-thin)',
-                borderRadius: '6px',
-                backgroundColor: 'var(--color-surface)',
-                color: 'var(--color-primary)',
-                padding: '2px 4px',
-                fontSize: '0.72rem',
-                fontWeight: 700,
-              }}
+              className="map-pin-cap-select"
             >
               {PIN_LIMIT_OPTIONS.map((limit) => (
                 <option key={limit} value={limit}>
-                  {limit}
+                  {limit} max
                 </option>
               ))}
             </select>
@@ -599,16 +582,17 @@ export default function DiscoveryMap({
           </Marker>
         )}
 
-        {/* Prioritized & Capped Restaurant Discovery Markers */}
-        {displayedMarkers.map((restaurant) => (
-          <RestaurantMapMarker
-            key={restaurant.id}
-            restaurant={restaurant}
-            isSelected={selectedRestaurant?.id === restaurant.id}
-            onSelect={onSelectRestaurant}
-            onGetDirections={routing.startNavigationTo}
-          />
-        ))}
+        {/* Prioritized & Capped Restaurant Discovery Markers (Hidden during active route so road path is 100% clear) */}
+        {!routing.route &&
+          displayedMarkers.map((restaurant) => (
+            <RestaurantMapMarker
+              key={restaurant.id}
+              restaurant={restaurant}
+              isSelected={selectedRestaurant?.id === restaurant.id}
+              onSelect={onSelectRestaurant}
+              onGetDirections={routing.startNavigationTo}
+            />
+          ))}
       </MapContainer>
 
       <RouteNavigationPanel

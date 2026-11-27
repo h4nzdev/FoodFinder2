@@ -151,27 +151,55 @@ export function normalizeRestaurants(elements = []) {
   return [...restaurants.values()];
 }
 
-export function mergeRestaurantLocations(osmRestaurants = [], ownerLocations = [], publishedMenuIds = new Set()) {
+export function mergeRestaurantLocations(
+  osmRestaurants = [],
+  ownerLocations = [],
+  publishedMenuData = new Map()
+) {
   const listings = new Map();
+  const getMenuMeta = (id) => {
+    if (publishedMenuData instanceof Map) return publishedMenuData.get(id) || null;
+    if (publishedMenuData instanceof Set && publishedMenuData.has(id)) {
+      return { dishes: [], minPrice: null, maxPrice: null, avgPrice: null, priceRangeLabel: '' };
+    }
+    return null;
+  };
 
   for (const restaurant of osmRestaurants) {
+    const menuMeta = getMenuMeta(restaurant.id);
     listings.set(restaurant.id, {
       ...restaurant,
-      hasPublishedMenu: publishedMenuIds.has(restaurant.id) || Boolean(restaurant.hasPublishedMenu),
+      hasPublishedMenu: Boolean(menuMeta) || Boolean(restaurant.hasPublishedMenu),
       hasExternalMenu: Boolean(restaurant.menuUrl),
+      minPrice: menuMeta?.minPrice ?? restaurant.minPrice ?? null,
+      maxPrice: menuMeta?.maxPrice ?? restaurant.maxPrice ?? null,
+      avgPrice: menuMeta?.avgPrice ?? restaurant.avgPrice ?? null,
+      priceRangeLabel: menuMeta?.priceRangeLabel || restaurant.priceRangeLabel || '',
+      menuDishes: menuMeta?.dishes || restaurant.menuDishes || [],
     });
   }
 
   for (const location of ownerLocations) {
     const existing = listings.get(location.id);
+    const menuMeta = getMenuMeta(location.id);
+
     if (existing) {
       listings.set(location.id, {
         ...existing,
         lat: location.lat,
         lon: location.lon,
         address: location.address || existing.address,
+        category: location.category || existing.category,
+        cuisine: location.cuisine || existing.cuisine,
+        cuisines:
+          location.cuisines?.length > 0 ? location.cuisines : existing.cuisines,
         ownerLocation: true,
-        hasPublishedMenu: publishedMenuIds.has(location.id) || Boolean(existing.hasPublishedMenu),
+        hasPublishedMenu: Boolean(menuMeta) || Boolean(existing.hasPublishedMenu),
+        minPrice: menuMeta?.minPrice ?? existing.minPrice ?? null,
+        maxPrice: menuMeta?.maxPrice ?? existing.maxPrice ?? null,
+        avgPrice: menuMeta?.avgPrice ?? existing.avgPrice ?? null,
+        priceRangeLabel: menuMeta?.priceRangeLabel || existing.priceRangeLabel || '',
+        menuDishes: menuMeta?.dishes || existing.menuDishes || [],
       });
     } else if (isValidCoordinate(location.lat, location.lon)) {
       listings.set(location.id, {
@@ -181,7 +209,12 @@ export function mergeRestaurantLocations(osmRestaurants = [], ownerLocations = [
         name: location.name,
         lat: location.lat,
         lon: location.lon,
-        amenity: 'restaurant',
+        amenity:
+          location.category === 'Café'
+            ? 'cafe'
+            : location.category === 'Fast Food'
+              ? 'fast_food'
+              : 'restaurant',
         category: location.category || 'Restaurant',
         cuisine: location.cuisine || '',
         cuisines: location.cuisines || [],
@@ -193,13 +226,27 @@ export function mergeRestaurantLocations(osmRestaurants = [], ownerLocations = [
         openingHours: null,
         description: null,
         ownerLocation: true,
-        hasPublishedMenu: publishedMenuIds.has(location.id),
+        hasPublishedMenu: Boolean(menuMeta),
         hasExternalMenu: false,
+        minPrice: menuMeta?.minPrice ?? null,
+        maxPrice: menuMeta?.maxPrice ?? null,
+        avgPrice: menuMeta?.avgPrice ?? null,
+        priceRangeLabel: menuMeta?.priceRangeLabel || '',
+        menuDishes: menuMeta?.dishes || [],
       });
     }
   }
 
-  return [...listings.values()];
+  // Sort so restaurants with verified published menus appear first
+  return [...listings.values()].sort((a, b) => {
+    if (a.hasPublishedMenu !== b.hasPublishedMenu) {
+      return a.hasPublishedMenu ? -1 : 1;
+    }
+    if (a.ownerLocation !== b.ownerLocation) {
+      return a.ownerLocation ? -1 : 1;
+    }
+    return a.name.localeCompare(b.name);
+  });
 }
 
 export function formatPeso(amount) {

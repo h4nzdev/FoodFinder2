@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { listingId, restaurantIdentity } from '../utils/restaurantNormalizer';
 import { isInCebuCity } from '../data/cebuCity';
+import { CEBU_VERIFIED_RESTAURANTS } from '../data/cebuVerifiedDirectory';
 
 const CLAIM_FIELDS =
   'id, restaurant_name, restaurant_osm_type, restaurant_osm_id, status, address, latitude, longitude, created_at';
@@ -188,30 +189,105 @@ export async function decideClaim(claimId, decision) {
   return data;
 }
 
+function inferCategoryAndCuisine(name, rawCategory, rawCuisine) {
+  const n = String(name || '').toLowerCase();
+  let category = rawCategory;
+  if (!category || !['Restaurant', 'Café', 'Fast Food'].includes(category)) {
+    if (
+      /jollibee|mcdonald|chowking|mang inasal|kfc|orange brutus|dimsum break|siomai/i.test(n)
+    ) {
+      category = 'Fast Food';
+    } else if (/coffee|café|cafe|abaca|tightrope|la vie/i.test(n)) {
+      category = 'Café';
+    } else {
+      category = 'Restaurant';
+    }
+  }
+
+  let cuisine = rawCuisine || '';
+  if (!cuisine) {
+    if (/lechon/i.test(n)) cuisine = 'Cebu Lechon & Filipino';
+    else if (/jollibee|mang inasal/i.test(n)) cuisine = 'Filipino Fast Food';
+    else if (/mcdonald|orange brutus/i.test(n)) cuisine = 'Burgers & Fried Chicken';
+    else if (/chowking|dimsum|siomai/i.test(n)) cuisine = 'Chinese & Dimsum';
+    else if (/coffee|abaca|tightrope|la vie/i.test(n)) cuisine = 'Specialty Coffee & Bakery';
+    else if (/larsian|stk|chika-an|sugbo/i.test(n)) cuisine = 'Cebuano Grill & Seafood';
+  }
+
+  return { category, cuisine };
+}
+
 export async function fetchPublishedLocations(signal, restaurantId = null) {
-  if (!supabase) return [];
+  const byId = new Map();
+
+  for (const item of CEBU_VERIFIED_RESTAURANTS) {
+    if (!restaurantId || item.id === restaurantId) {
+      byId.set(item.id, { ...item });
+    }
+  }
+
+  if (!supabase) return [...byId.values()];
   const identity = restaurantId ? restaurantIdentity(restaurantId) : null;
-  if (restaurantId && !identity) return [];
+  if (restaurantId && !identity) return [...byId.values()];
 
-  const query = supabase
-    .from('published_restaurant_locations')
-    .select('restaurant_osm_type, restaurant_osm_id, restaurant_name, address, latitude, longitude');
+  try {
+    let data = null;
+    const fullQuery = supabase
+      .from('published_restaurant_locations')
+      .select(
+        'restaurant_osm_type, restaurant_osm_id, restaurant_name, address, latitude, longitude, category, cuisine'
+      );
 
-  if (identity) query.match(identity);
-  if (signal) query.abortSignal(signal);
+    if (identity) fullQuery.match(identity);
+    if (signal) fullQuery.abortSignal(signal);
 
-  const { data, error } = await query;
-  if (error) throw error;
+    const fullResult = await fullQuery;
+    if (!fullResult.error) {
+      data = fullResult.data;
+    } else {
+      const basicQuery = supabase
+        .from('published_restaurant_locations')
+        .select(
+          'restaurant_osm_type, restaurant_osm_id, restaurant_name, address, latitude, longitude'
+        );
+      if (identity) basicQuery.match(identity);
+      if (signal) basicQuery.abortSignal(signal);
+      const basicResult = await basicQuery;
+      if (!basicResult.error) {
+        data = basicResult.data;
+      }
+    }
 
-  return (data || []).map((row) => ({
-    id: listingId(row),
-    osmType: row.restaurant_osm_type,
-    osmId: row.restaurant_osm_id,
-    name: row.restaurant_name,
-    lat: row.latitude,
-    lon: row.longitude,
-    address: row.address,
-    category: 'Restaurant',
-    ownerLocation: true,
-  }));
+    for (const row of data || []) {
+      const id = listingId(row);
+      const { category, cuisine } = inferCategoryAndCuisine(
+        row.restaurant_name,
+        row.category,
+        row.cuisine
+      );
+      byId.set(id, {
+        ...(byId.get(id) || {}),
+        id,
+        osmType: row.restaurant_osm_type,
+        osmId: row.restaurant_osm_id,
+        name: row.restaurant_name,
+        lat: row.latitude,
+        lon: row.longitude,
+        address: row.address,
+        category,
+        cuisine,
+        cuisines: cuisine
+          ? cuisine
+              .split(/[·,]/)
+              .map((c) => c.trim())
+              .filter(Boolean)
+          : [],
+        ownerLocation: true,
+      });
+    }
+  } catch {
+    /* Use verified Cebu City directory baseline if query fails */
+  }
+
+  return [...byId.values()];
 }

@@ -6,6 +6,7 @@ import RestaurantDetails from './pages/RestaurantDetails';
 import OwnerLogin from './pages/OwnerLogin';
 import OwnerDashboard from './pages/OwnerDashboard';
 import ClaimReview from './pages/ClaimReview';
+import PrivacyTerms from './pages/PrivacyTerms';
 import { supabase } from './lib/supabase';
 import { checkIsReviewer, signOutOwner } from './services/ownerService';
 
@@ -90,6 +91,7 @@ export default function App() {
             path="/claims/review"
             element={<ClaimReview session={session} />}
           />
+          <Route path="/privacy-terms" element={<PrivacyTerms />} />
           <Route path="*" element={<Discover />} />
         </Routes>
       </main>

@@ -1,48 +1,145 @@
 import { supabase } from '../lib/supabase';
-import { listingId, restaurantIdentity } from '../utils/restaurantNormalizer';
+import { formatPeso, listingId, restaurantIdentity } from '../utils/restaurantNormalizer';
+import { CEBU_VERIFIED_RESTAURANTS } from '../data/cebuVerifiedDirectory';
 
-const publishedMenuIdsCache = {
-  ids: new Set(),
+const publishedMenuCatalogCache = {
+  catalog: new Map(),
   timestamp: 0,
 };
 
+export function summarizeMenuPrices(items = []) {
+  const validDishes = (Array.isArray(items) ? items : [])
+    .map((item) => ({
+      id: item?.id || item?.name,
+      name: String(item?.name || '').trim(),
+      category: String(item?.category || '').trim(),
+      description: String(item?.description || '').trim(),
+      price: Number(item?.price),
+      available: item?.available !== false,
+    }))
+    .filter((item) => item.name && Number.isFinite(item.price) && item.price >= 0);
+
+  if (validDishes.length === 0) {
+    return {
+      dishes: [],
+      minPrice: null,
+      maxPrice: null,
+      avgPrice: null,
+      priceRangeLabel: '',
+    };
+  }
+
+  const prices = validDishes.map((d) => d.price);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const avgPrice = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
+  const priceRangeLabel =
+    minPrice === maxPrice
+      ? formatPeso(minPrice)
+      : `${formatPeso(minPrice)} – ${formatPeso(maxPrice)}`;
+
+  return {
+    dishes: validDishes,
+    minPrice,
+    maxPrice,
+    avgPrice,
+    priceRangeLabel,
+  };
+}
+
 export async function fetchPublishedMenu(restaurantId, signal) {
+  const builtinMatch = CEBU_VERIFIED_RESTAURANTS.find((r) => r.id === restaurantId);
   const identity = restaurantIdentity(restaurantId);
-  if (!supabase || !identity) return null;
+  if (!supabase || !identity) {
+    return builtinMatch
+      ? {
+          items: builtinMatch.items,
+          published_at: '2026-11-27T00:00:00Z',
+          restaurant_osm_type: builtinMatch.osmType,
+          restaurant_osm_id: builtinMatch.osmId,
+        }
+      : null;
+  }
 
-  const query = supabase
-    .from('published_restaurant_menus')
-    .select('items, published_at, restaurant_osm_type, restaurant_osm_id')
-    .match(identity);
+  try {
+    const query = supabase
+      .from('published_restaurant_menus')
+      .select('items, published_at, restaurant_osm_type, restaurant_osm_id')
+      .match(identity);
 
-  if (signal) query.abortSignal(signal);
-  const { data, error } = await query.maybeSingle();
-  if (error) throw error;
-  return data;
+    if (signal) query.abortSignal(signal);
+    const { data, error } = await query.maybeSingle();
+    if (!error && data) return data;
+  } catch {
+    /* Fall back to verified directory if offline or not yet seeded */
+  }
+
+  return builtinMatch
+    ? {
+        items: builtinMatch.items,
+        published_at: '2026-11-27T00:00:00Z',
+        restaurant_osm_type: builtinMatch.osmType,
+        restaurant_osm_id: builtinMatch.osmId,
+      }
+    : null;
+}
+
+export function getBuiltinMenusCatalog() {
+  const catalog = new Map();
+  for (const entry of CEBU_VERIFIED_RESTAURANTS) {
+    catalog.set(entry.id, {
+      ...summarizeMenuPrices(entry.items),
+      publishedAt: '2026-11-27T00:00:00Z',
+    });
+  }
+  return catalog;
+}
+
+export async function fetchPublishedMenusCatalog(signal, forceRefresh = false) {
+  const catalog = getBuiltinMenusCatalog();
+  if (!supabase) return catalog;
+
+  if (
+    !forceRefresh &&
+    Date.now() - publishedMenuCatalogCache.timestamp < 60 * 1000 &&
+    publishedMenuCatalogCache.catalog.size > 0
+  ) {
+    return publishedMenuCatalogCache.catalog;
+  }
+
+  try {
+    const query = supabase
+      .from('published_restaurant_menus')
+      .select('restaurant_osm_type, restaurant_osm_id, items, published_at');
+
+    if (signal) query.abortSignal(signal);
+    const { data, error } = await query;
+    if (!error && Array.isArray(data)) {
+      for (const row of data) {
+        const id = listingId(row);
+        if (!id) continue;
+        catalog.set(id, {
+          ...summarizeMenuPrices(row.items),
+          publishedAt: row.published_at,
+        });
+      }
+    }
+  } catch {
+    /* Return built-in verified catalog on network failure */
+  }
+
+  publishedMenuCatalogCache.catalog = catalog;
+  publishedMenuCatalogCache.timestamp = Date.now();
+  return catalog;
 }
 
 export async function fetchPublishedMenuIds(signal, forceRefresh = false) {
-  if (!supabase) return new Set();
-  if (!forceRefresh && Date.now() - publishedMenuIdsCache.timestamp < 60 * 1000 && publishedMenuIdsCache.ids.size > 0) {
-    return publishedMenuIdsCache.ids;
-  }
-
-  const query = supabase
-    .from('published_restaurant_menus')
-    .select('restaurant_osm_type, restaurant_osm_id');
-
-  if (signal) query.abortSignal(signal);
-  const { data, error } = await query;
-  if (error) return publishedMenuIdsCache.ids;
-
-  const ids = new Set((data || []).map((row) => listingId(row)).filter(Boolean));
-  publishedMenuIdsCache.ids = ids;
-  publishedMenuIdsCache.timestamp = Date.now();
-  return ids;
+  const catalog = await fetchPublishedMenusCatalog(signal, forceRefresh);
+  return new Set(catalog.keys());
 }
 
 export function invalidatePublishedMenuCache() {
-  publishedMenuIdsCache.timestamp = 0;
+  publishedMenuCatalogCache.timestamp = 0;
 }
 
 export async function fetchDraftMenuItems(claimId, signal) {

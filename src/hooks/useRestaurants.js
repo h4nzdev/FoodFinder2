@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchRestaurantsInBounds } from '../services/restaurantService';
 import { fetchPublishedLocations } from '../services/ownerService';
-import { fetchPublishedMenuIds } from '../services/menuService';
+import {
+  fetchPublishedMenusCatalog,
+  getBuiltinMenusCatalog,
+} from '../services/menuService';
 import { mergeRestaurantLocations } from '../utils/restaurantNormalizer';
 import { CEBU_CITY_BOUNDS } from '../data/cebuCity';
+import { CEBU_VERIFIED_RESTAURANTS } from '../data/cebuVerifiedDirectory';
 
 const DEFAULT_BOUNDS = {
   south: CEBU_CITY_BOUNDS[0][0],
@@ -12,20 +16,30 @@ const DEFAULT_BOUNDS = {
   east: CEBU_CITY_BOUNDS[1][1],
 };
 
+function getInitialBaselineRestaurants() {
+  return mergeRestaurantLocations(
+    [],
+    CEBU_VERIFIED_RESTAURANTS,
+    getBuiltinMenusCatalog()
+  );
+}
+
 export function useRestaurants() {
-  const [allRestaurants, setAllRestaurants] = useState([]);
+  const [allRestaurants, setAllRestaurants] = useState(getInitialBaselineRestaurants);
   const [bounds, setBounds] = useState(DEFAULT_BOUNDS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedCuisine, setSelectedCuisine] = useState('All');
+  const [maxBudget, setMaxBudget] = useState('');
   const [onlyVerifiedMenus, setOnlyVerifiedMenus] = useState(false);
-  const [onlyInMapView, setOnlyInMapView] = useState(true);
+  const [onlyInMapView, setOnlyInMapView] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
   const requestIdRef = useRef(0);
   const debounceTimerRef = useRef(null);
+  const hasLoadedOverpassRef = useRef(false);
 
   const loadRestaurantsForBounds = useCallback(async (targetBounds, forceRefresh = false) => {
     const currentRequestId = ++requestIdRef.current;
@@ -34,41 +48,41 @@ export function useRestaurants() {
     setError('');
 
     try {
-      const [overpassResult, ownerResult, menuIdsResult] = await Promise.allSettled([
+      const [overpassResult, ownerResult, menuCatalogResult] = await Promise.allSettled([
         fetchRestaurantsInBounds(targetBounds, null, { forceRefresh }),
         fetchPublishedLocations(null),
-        fetchPublishedMenuIds(null, forceRefresh),
+        fetchPublishedMenusCatalog(null, forceRefresh),
       ]);
 
       if (currentRequestId !== requestIdRef.current) return;
 
-      const ownerLocations = ownerResult.status === 'fulfilled' ? ownerResult.value : [];
-      const publishedMenuIds =
-        menuIdsResult.status === 'fulfilled' ? menuIdsResult.value : new Set();
+      const ownerLocations =
+        ownerResult.status === 'fulfilled'
+          ? ownerResult.value
+          : CEBU_VERIFIED_RESTAURANTS;
+      const publishedMenuCatalog =
+        menuCatalogResult.status === 'fulfilled'
+          ? menuCatalogResult.value
+          : getBuiltinMenusCatalog();
 
       if (overpassResult.status === 'rejected') {
-        const reason = overpassResult.reason;
-        if (ownerLocations.length > 0) {
-          const mergedFallback = mergeRestaurantLocations([], ownerLocations, publishedMenuIds);
-          setAllRestaurants(mergedFallback);
-          setError('Overpass API is temporarily busy. Showing verified owner locations.');
-        } else {
-          setError(
-            reason?.message ||
-              'Could not retrieve restaurants from OpenStreetMap Overpass API. Please retry.'
-          );
-        }
+        const mergedFallback = mergeRestaurantLocations(
+          [],
+          ownerLocations,
+          publishedMenuCatalog
+        );
+        setAllRestaurants(mergedFallback);
         setLoading(false);
         return;
       }
 
+      hasLoadedOverpassRef.current = true;
       const osmList = overpassResult.value?.allRestaurants || [];
-      const merged = mergeRestaurantLocations(osmList, ownerLocations, publishedMenuIds);
+      const merged = mergeRestaurantLocations(osmList, ownerLocations, publishedMenuCatalog);
       setAllRestaurants(merged);
       setLoading(false);
-    } catch (err) {
+    } catch {
       if (currentRequestId !== requestIdRef.current) return;
-      setError(err?.message || 'Unable to load restaurants right now.');
       setLoading(false);
     }
   }, []);
@@ -108,9 +122,7 @@ export function useRestaurants() {
         nextBounds.east >= cebuWest &&
         nextBounds.west <= cebuEast;
 
-      // When panning inside Cebu City and we already have the master dataset loaded,
-      // filter locally without sending redundant Overpass network requests
-      if (insideCebuMaster && allRestaurants.length > 0) {
+      if (insideCebuMaster && hasLoadedOverpassRef.current) {
         return;
       }
 
@@ -121,7 +133,7 @@ export function useRestaurants() {
         loadRestaurantsForBounds(nextBounds, false);
       }, 500);
     },
-    [allRestaurants.length, loadRestaurantsForBounds]
+    [loadRestaurantsForBounds]
   );
 
   const retry = useCallback(() => {
@@ -137,23 +149,21 @@ export function useRestaurants() {
     }
     return [...counts.entries()]
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .slice(0, 14)
+      .slice(0, 16)
       .map(([name]) => name);
   }, [allRestaurants]);
+
+  const parsedMaxBudget = useMemo(() => {
+    const trimmed = String(maxBudget || '').trim();
+    if (!trimmed) return null;
+    const num = Number(trimmed);
+    return Number.isFinite(num) && num > 0 ? num : null;
+  }, [maxBudget]);
 
   const filteredRestaurants = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
 
-    return allRestaurants.filter((restaurant) => {
-      if (onlyInMapView && bounds) {
-        const inBox =
-          restaurant.lat >= bounds.south &&
-          restaurant.lat <= bounds.north &&
-          restaurant.lon >= bounds.west &&
-          restaurant.lon <= bounds.east;
-        if (!inBox) return false;
-      }
-
+    const matchingCriteria = allRestaurants.filter((restaurant) => {
       if (selectedCategory !== 'All' && restaurant.category !== selectedCategory) {
         return false;
       }
@@ -169,12 +179,22 @@ export function useRestaurants() {
         return false;
       }
 
+      if (parsedMaxBudget !== null) {
+        if (restaurant.minPrice === null || restaurant.minPrice > parsedMaxBudget) {
+          return false;
+        }
+      }
+
       if (q) {
+        const dishNames = (restaurant.menuDishes || [])
+          .map((d) => `${d.name} ${d.category}`)
+          .join(' ');
         const haystack = [
           restaurant.name,
           restaurant.cuisine,
           restaurant.category,
           restaurant.address,
+          dishNames,
         ]
           .filter(Boolean)
           .join(' ')
@@ -184,11 +204,26 @@ export function useRestaurants() {
 
       return true;
     });
+
+    if (!onlyInMapView || !bounds) {
+      return matchingCriteria;
+    }
+
+    const inViewport = matchingCriteria.filter(
+      (restaurant) =>
+        restaurant.lat >= bounds.south &&
+        restaurant.lat <= bounds.north &&
+        restaurant.lon >= bounds.west &&
+        restaurant.lon <= bounds.east
+    );
+
+    return inViewport.length > 0 ? inViewport : matchingCriteria;
   }, [
     allRestaurants,
     bounds,
     onlyInMapView,
     onlyVerifiedMenus,
+    parsedMaxBudget,
     searchQuery,
     selectedCategory,
     selectedCuisine,
@@ -198,7 +233,9 @@ export function useRestaurants() {
     setSearchQuery('');
     setSelectedCategory('All');
     setSelectedCuisine('All');
+    setMaxBudget('');
     setOnlyVerifiedMenus(false);
+    setOnlyInMapView(false);
   }, []);
 
   return {
@@ -214,6 +251,9 @@ export function useRestaurants() {
     setSelectedCategory,
     selectedCuisine,
     setSelectedCuisine,
+    maxBudget,
+    setMaxBudget,
+    parsedMaxBudget,
     onlyVerifiedMenus,
     setOnlyVerifiedMenus,
     onlyInMapView,

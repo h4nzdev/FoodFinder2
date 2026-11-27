@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Compass, ShieldCheck, Store, LogOut } from 'lucide-react';
+import { Compass, Lock, ShieldCheck, Store, LogOut } from 'lucide-react';
 
 export default function Header({ session, isReviewer, onSignOut }) {
   const { pathname } = useLocation();
@@ -10,14 +10,15 @@ export default function Header({ session, isReviewer, onSignOut }) {
     pathname.startsWith('/explore');
   const isOwner = pathname.startsWith('/owner');
   const isReview = pathname.startsWith('/claims/review');
+  const isPrivacy = pathname.startsWith('/privacy-terms');
 
   return (
     <header className="editorial-header">
       <div className="editorial-header-inner">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
           <Link to="/" className="brand-masthead" aria-label="FoodFinder Cebu City Home">
             <span className="brand-emblem" aria-hidden="true">
-              <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+              <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
                 <circle cx="16" cy="16" r="10" stroke="#FFFFFF" strokeWidth="1.9" />
                 <circle
                   cx="16"
@@ -62,16 +63,20 @@ export default function Header({ session, isReviewer, onSignOut }) {
             to="/"
             className={`editorial-nav-link ${isDiscover ? 'active' : ''}`}
           >
-            <Compass size={15} aria-hidden="true" />
-            <span>Discover &amp; Map</span>
+            <Compass size={14} aria-hidden="true" />
+            <span>
+              Discover<span className="hide-on-mobile-nav"> &amp; Map</span>
+            </span>
           </Link>
 
           <Link
             to="/owner"
             className={`editorial-nav-link ${isOwner ? 'active' : ''}`}
           >
-            <Store size={15} aria-hidden="true" />
-            <span>{session ? 'Owner Dashboard' : 'Owner Portal'}</span>
+            <Store size={14} aria-hidden="true" />
+            <span>
+              Owner<span className="hide-on-mobile-nav"> Portal</span>
+            </span>
           </Link>
 
           {isReviewer && (
@@ -79,10 +84,23 @@ export default function Header({ session, isReviewer, onSignOut }) {
               to="/claims/review"
               className={`editorial-nav-link ${isReview ? 'active' : ''}`}
             >
-              <ShieldCheck size={15} aria-hidden="true" />
-              <span>Claim Review</span>
+              <ShieldCheck size={14} aria-hidden="true" />
+              <span>
+                <span className="hide-on-mobile-nav">Claim </span>Review
+              </span>
             </Link>
           )}
+
+          <Link
+            to="/privacy-terms"
+            className={`editorial-nav-link ${isPrivacy ? 'active' : ''}`}
+            title="Privacy Policy, Terms & Conditions (CIA Triad)"
+          >
+            <Lock size={13} aria-hidden="true" />
+            <span>
+              Privacy<span className="hide-on-mobile-nav"> &amp; CIA</span>
+            </span>
+          </Link>
 
           {session && (
             <button
@@ -92,7 +110,7 @@ export default function Header({ session, isReviewer, onSignOut }) {
               title={`Signed in as ${session.user?.email || 'Owner'}`}
             >
               <LogOut size={13} aria-hidden="true" />
-              <span>Sign Out</span>
+              <span className="hide-on-mobile-nav">Sign Out</span>
             </button>
           )}
         </nav>

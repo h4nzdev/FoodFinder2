@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, KeyRound, UserPlus } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, KeyRound, UserPlus } from 'lucide-react';
 import {
   formatAuthError,
   registerOwner,
@@ -20,6 +20,7 @@ export default function OwnerLogin({ session }) {
     : '/owner';
 
   const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
@@ -178,16 +179,76 @@ export default function OwnerLogin({ session }) {
 
                 <label className="editorial-field-label">
                   <span>Password</span>
-                  <input
-                    name="password"
-                    type="password"
-                    className="editorial-input"
-                    minLength={isRegisterMode ? 8 : undefined}
-                    autoComplete={isRegisterMode ? 'new-password' : 'current-password'}
-                    placeholder={isRegisterMode ? 'At least 8 characters' : '••••••••'}
-                    required
-                  />
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <input
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      className="editorial-input"
+                      style={{ paddingRight: '42px' }}
+                      minLength={isRegisterMode ? 8 : undefined}
+                      autoComplete={isRegisterMode ? 'new-password' : 'current-password'}
+                      placeholder={isRegisterMode ? 'At least 8 characters' : '••••••••'}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                      style={{
+                        position: 'absolute',
+                        right: '10px',
+                        width: '30px',
+                        height: '30px',
+                        borderRadius: '8px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--color-primary-mid)',
+                      }}
+                    >
+                      {showPassword ? (
+                        <EyeOff size={17} aria-hidden="true" />
+                      ) : (
+                        <Eye size={17} aria-hidden="true" />
+                      )}
+                    </button>
+                  </div>
                 </label>
+
+                {isRegisterMode && (
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      fontSize: '0.78rem',
+                      color: 'var(--color-secondary)',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    <input
+                      name="acceptCiaTerms"
+                      type="checkbox"
+                      required
+                      style={{ marginTop: '3px' }}
+                    />
+                    <span>
+                      I agree to the{' '}
+                      <Link
+                        to="/privacy-terms"
+                        style={{
+                          color: 'var(--color-primary-mid)',
+                          fontWeight: 700,
+                          textDecoration: 'underline',
+                        }}
+                      >
+                        Privacy Policy &amp; Terms and Conditions (CIA Triad Standard)
+                      </Link>
+                      .
+                    </span>
+                  </label>
+                )}
 
                 {error && (
                   <div className="editorial-alert" role="alert">
