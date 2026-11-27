@@ -1,13 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   BookOpen,
   ChevronDown,
+  ChevronUp,
   List,
   Map as MapIcon,
+  Navigation,
   RefreshCw,
   RotateCcw,
   Search,
   ShieldCheck,
+  SlidersHorizontal,
   X,
 } from 'lucide-react';
 import { useRestaurants } from '../hooks/useRestaurants';
@@ -54,7 +57,9 @@ export default function Discover() {
 
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [mobileMode, setMobileMode] = useState('split'); // 'split' | 'list' | 'map'
+  const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(false);
   const [visibleListLimit, setVisibleListLimit] = useState(LIST_PAGE_SIZE);
+  const scrollPaneRef = useRef(null);
 
   useEffect(() => {
     setVisibleListLimit(LIST_PAGE_SIZE);
@@ -71,11 +76,27 @@ export default function Discover() {
     if (mobileMode === 'map') {
       setMobileMode('split');
     }
+    if (scrollPaneRef.current) {
+      scrollPaneRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleGetDirections = (restaurant) => {
     setSelectedRestaurant(restaurant);
     routing.startNavigationTo(restaurant);
+    // On mobile viewports, automatically switch to Map view so the OSRM route
+    // and turn-by-turn navigation panel are immediately visible without sheet overlap
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      setMobileMode('map');
+    }
+  };
+
+  const cycleMobileSheetSize = () => {
+    setMobileMode((prev) => {
+      if (prev === 'split') return 'list';
+      if (prev === 'list') return 'map';
+      return 'split';
+    });
   };
 
   const hasActiveFilters =
@@ -83,6 +104,16 @@ export default function Discover() {
     selectedCategory !== 'All' ||
     selectedCuisine !== 'All' ||
     onlyVerifiedMenus;
+
+  const activeFilterCount =
+    (selectedCategory !== 'All' ? 1 : 0) +
+    (selectedCuisine !== 'All' ? 1 : 0) +
+    (onlyVerifiedMenus ? 1 : 0) +
+    (!onlyInMapView ? 1 : 0);
+
+  const hasActiveRoute = Boolean(
+    routing.targetRestaurant || routing.route || routing.loading || routing.isPickingOrigin
+  );
 
   const MastheadIllustration =
     selectedCategory === 'Café'
@@ -93,11 +124,42 @@ export default function Discover() {
 
   return (
     <div className="discover-split-layout">
-      {/* LEFT SECTION: Editorial Restaurant Discovery, Filters & Selected Restaurant Folio */}
+      {/* LEFT SECTION / MOBILE FLEXIBLE BOTTOM SHEET */}
       <section
         className={`discover-left-column mobile-mode-${mobileMode}`}
         aria-label="Restaurant Discovery Directory"
       >
+        {/* Mobile Tactile Sheet Grab Handle Bar */}
+        <div className="mobile-sheet-grab-bar">
+          <button
+            type="button"
+            className="mobile-sheet-grab-btn"
+            onClick={cycleMobileSheetSize}
+            aria-label="Toggle bottom sheet height"
+          >
+            <span className="mobile-sheet-pill" aria-hidden="true" />
+            <span className="mobile-sheet-grab-title">
+              {selectedRestaurant
+                ? selectedRestaurant.name
+                : `${filteredRestaurants.length} Cebu City Establishments`}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className={`btn-editorial btn-sm mobile-filter-toggle-btn ${
+              mobileFiltersExpanded || activeFilterCount > 0 ? 'btn-editorial-ink' : ''
+            }`}
+            onClick={() => setMobileFiltersExpanded((prev) => !prev)}
+            aria-expanded={mobileFiltersExpanded}
+          >
+            <SlidersHorizontal size={12} aria-hidden="true" />
+            <span>Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</span>
+            {mobileFiltersExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          </button>
+        </div>
+
+        {/* Desktop Masthead (Hidden on compact mobile sheet to maximize scrollable content) */}
         <div className="discover-editorial-masthead">
           <div>
             <span className="editorial-kicker">Cebu City Field Guide</span>
@@ -113,8 +175,12 @@ export default function Discover() {
           </div>
         </div>
 
-        {/* Search & Category Controls */}
-        <div className="discover-controls-section">
+        {/* Search & Category Controls (Collapsible on Mobile) */}
+        <div
+          className={`discover-controls-section ${
+            mobileFiltersExpanded ? 'mobile-filters-open' : ''
+          }`}
+        >
           <div className="search-box-editorial">
             <Search size={16} className="search-box-icon" aria-hidden="true" />
             <input
@@ -199,14 +265,14 @@ export default function Discover() {
         <div className="discover-status-bar" role="status" aria-live="polite">
           <span>
             {loading ? (
-              'Retrieving Cebu City establishments from Overpass…'
+              'Syncing Cebu City establishments…'
             ) : (
               <>
                 Matching{' '}
                 <span className="status-count-strong">
                   {filteredRestaurants.length}
                 </span>{' '}
-                of {allRestaurants.length} establishments
+                of {allRestaurants.length} places
               </>
             )}
           </span>
@@ -235,8 +301,8 @@ export default function Discover() {
           </div>
         </div>
 
-        {/* Scrollable Left Pane: Selected Restaurant Folio + Editorial Directory List */}
-        <div className="discover-scroll-pane">
+        {/* Scrollable Pane: Selected Restaurant Folio + Restaurant Directory List */}
+        <div ref={scrollPaneRef} className="discover-scroll-pane">
           {selectedRestaurant && (
             <SelectedRestaurantPanel
               restaurant={selectedRestaurant}
@@ -247,7 +313,7 @@ export default function Discover() {
           )}
 
           {error && (
-            <div className="editorial-empty-state" role="alert" style={{ margin: '16px' }}>
+            <div className="editorial-empty-state" role="alert">
               <LocationPinIllustration size={64} />
               <h2 className="editorial-empty-title">Overpass Connection Issue</h2>
               <p className="editorial-empty-copy">{error}</p>
@@ -263,7 +329,7 @@ export default function Discover() {
           )}
 
           {!loading && !error && filteredRestaurants.length === 0 && (
-            <div className="editorial-empty-state" style={{ margin: '16px' }}>
+            <div className="editorial-empty-state">
               <StorefrontIllustration size={72} />
               <h2 className="editorial-empty-title">No Establishments in View</h2>
               <p className="editorial-empty-copy">
@@ -308,14 +374,7 @@ export default function Discover() {
           </div>
 
           {remainingListCount > 0 && (
-            <div
-              style={{
-                padding: '16px 20px',
-                borderBottom: 'var(--rule-thin)',
-                backgroundColor: 'var(--color-paper-alt)',
-                textAlign: 'center',
-              }}
-            >
+            <div style={{ padding: '8px 0 16px', textAlign: 'center' }}>
               <button
                 type="button"
                 className="btn-editorial btn-block"
@@ -340,20 +399,23 @@ export default function Discover() {
         onBoundsChange={updateMapBounds}
         geolocation={geolocation}
         routing={routing}
+        mobileMode={mobileMode}
       />
 
-      {/* MOBILE MODE SWITCHER: Map / Split Sheet / Full Directory List */}
+      {/* MOBILE MODE SWITCHER: Map / Split Sheet / Full List / Active Route */}
       <nav
-        className="mobile-mode-switcher"
+        className={`mobile-mode-switcher ${hasActiveRoute ? 'has-route' : ''}`}
         aria-label="Mobile layout view switcher"
       >
         <button
           type="button"
-          className={`mobile-mode-btn ${mobileMode === 'map' ? 'active' : ''}`}
+          className={`mobile-mode-btn ${
+            mobileMode === 'map' && !hasActiveRoute ? 'active' : ''
+          }`}
           onClick={() => setMobileMode('map')}
         >
           <MapIcon size={14} aria-hidden="true" />
-          <span>Full Map</span>
+          <span>Map</span>
         </button>
 
         <button
@@ -362,7 +424,7 @@ export default function Discover() {
           onClick={() => setMobileMode('split')}
         >
           <BookOpen size={14} aria-hidden="true" />
-          <span>{selectedRestaurant ? 'Selected Info' : 'Map + Sheet'}</span>
+          <span>{selectedRestaurant ? 'Selected' : 'Split'}</span>
         </button>
 
         <button
@@ -373,6 +435,17 @@ export default function Discover() {
           <List size={14} aria-hidden="true" />
           <span>List ({filteredRestaurants.length})</span>
         </button>
+
+        {hasActiveRoute && (
+          <button
+            type="button"
+            className={`mobile-mode-btn ${mobileMode === 'map' ? 'active' : ''}`}
+            onClick={() => setMobileMode('map')}
+          >
+            <Navigation size={14} aria-hidden="true" />
+            <span>Route</span>
+          </button>
+        )}
       </nav>
     </div>
   );

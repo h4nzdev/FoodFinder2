@@ -1,21 +1,25 @@
 import axios from 'axios';
-import { CEBU_CITY_AREA, CEBU_CITY_BOUNDS, isInCebuCity } from '../data/cebuCity';
+import { CEBU_CITY_BOUNDS, isInCebuCity } from '../data/cebuCity';
 import {
   normalizeRestaurants,
   isOsmRestaurantId,
   isValidCoordinate,
 } from '../utils/restaurantNormalizer';
 
-function getOverpassEndpoint() {
-  return (
-    import.meta.env.VITE_OVERPASS_URL?.trim() ||
-    'https://ovp.dresel.systems/api-as/interpreter'
-  );
+function getOverpassEndpoints() {
+  const configured = import.meta.env.VITE_OVERPASS_URL?.trim();
+  const endpoints = [
+    configured || 'https://ovp.dresel.systems/api-as/interpreter',
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
+  ];
+  return [...new Set(endpoints)];
 }
 
 const AMENITY_FILTER = '["amenity"~"^(restaurant|cafe|fast_food)$"]';
-const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_TTL_MS = 10 * 60 * 1000;
 const queryCache = new Map();
+const inFlightQueries = new Map();
 let cebuCityMasterCache = null;
 
 function quantizeBounds(bounds) {
@@ -36,56 +40,89 @@ function isInsideBounds(lat, lon, bounds) {
   );
 }
 
-async function executeOverpassQuery(overpassQl, signal) {
-  const endpoint = getOverpassEndpoint();
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function requestFromSingleEndpoint(endpoint, overpassQl) {
+  const body = new URLSearchParams({ data: overpassQl }).toString();
+  const { data } = await axios.post(endpoint, body, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    timeout: 25000,
+  });
+
+  if (typeof data === 'string') {
+    if (data.includes('duplicate_query')) {
+      const err = new Error('DUPLICATE_QUERY');
+      err.code = 'DUPLICATE_QUERY';
+      throw err;
+    }
+    throw new Error('Overpass returned non-JSON response.');
+  }
+
+  if (!Array.isArray(data?.elements)) {
+    throw new Error('Overpass response missing elements array.');
+  }
+
+  return data.elements;
+}
+
+async function executeOverpassQuery(overpassQl) {
   const cached = queryCache.get(overpassQl);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     return cached.elements;
   }
 
-  let responseData = null;
+  // Deduplicate concurrent identical queries so Overpass never throws duplicate_query
+  if (inFlightQueries.has(overpassQl)) {
+    return inFlightQueries.get(overpassQl);
+  }
+
+  const queryPromise = (async () => {
+    const endpoints = getOverpassEndpoints();
+    let lastError = null;
+
+    for (const endpoint of endpoints) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const elements = await requestFromSingleEndpoint(endpoint, overpassQl);
+          queryCache.set(overpassQl, {
+            timestamp: Date.now(),
+            elements,
+          });
+          if (queryCache.size > 30) {
+            const oldestKey = queryCache.keys().next().value;
+            queryCache.delete(oldestKey);
+          }
+          return elements;
+        } catch (err) {
+          lastError = err;
+          if (err.code === 'DUPLICATE_QUERY' && attempt === 0) {
+            await delay(1400);
+            continue;
+          }
+          break;
+        }
+      }
+    }
+
+    throw new Error(
+      lastError?.message && lastError.message !== 'DUPLICATE_QUERY'
+        ? lastError.message
+        : 'Unable to reach the Overpass restaurant server right now. Please try again in a few seconds.'
+    );
+  })();
+
+  inFlightQueries.set(overpassQl, queryPromise);
 
   try {
-    const body = new URLSearchParams({ data: overpassQl }).toString();
-    const { data } = await axios.post(endpoint, body, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      signal,
-      timeout: 28000,
-    });
-    responseData = data;
-  } catch (postError) {
-    if (
-      axios.isCancel(postError) ||
-      postError?.name === 'CanceledError' ||
-      postError?.name === 'AbortError'
-    ) {
-      throw postError;
-    }
-    const { data } = await axios.get(endpoint, {
-      params: { data: overpassQl },
-      signal,
-      timeout: 28000,
-    });
-    responseData = data;
+    return await queryPromise;
+  } finally {
+    inFlightQueries.delete(overpassQl);
   }
-
-  if (!Array.isArray(responseData?.elements) || responseData.remark) {
-    throw new Error('The Overpass server returned an incomplete dataset. Please retry.');
-  }
-
-  queryCache.set(overpassQl, {
-    timestamp: Date.now(),
-    elements: responseData.elements,
-  });
-  if (queryCache.size > 30) {
-    const oldestKey = queryCache.keys().next().value;
-    queryCache.delete(oldestKey);
-  }
-
-  return responseData.elements;
 }
 
-export async function fetchCebuCityRestaurants(signal, options = {}) {
+export async function fetchCebuCityRestaurants(_signal, options = {}) {
   const { forceRefresh = false } = options;
   if (
     !forceRefresh &&
@@ -96,13 +133,15 @@ export async function fetchCebuCityRestaurants(signal, options = {}) {
   }
 
   const [[south, west], [north, east]] = CEBU_CITY_BOUNDS;
-  const overpassQl = `[out:json][timeout:25];area(${CEBU_CITY_AREA})->.cebu;nwr${AMENITY_FILTER}(area.cebu)(${south},${west},${north},${east});out center tags;`;
+  // Pure bounding-box query avoids Overpass area-index lock/duplicate_query errors;
+  // exact Cebu City boundary filtering is performed locally via isInCebuCity().
+  const overpassQl = `[out:json][timeout:25];(nwr${AMENITY_FILTER}(${south},${west},${north},${east}););out center tags;`;
 
   if (forceRefresh) {
     queryCache.delete(overpassQl);
   }
 
-  const elements = await executeOverpassQuery(overpassQl, signal);
+  const elements = await executeOverpassQuery(overpassQl);
   const restaurants = normalizeRestaurants(elements).filter(({ lat, lon }) =>
     isInCebuCity(lat, lon)
   );
@@ -123,7 +162,11 @@ export async function fetchRestaurantsInBounds(bounds, signal, options = {}) {
     !isValidCoordinate(bounds.south, bounds.west) ||
     !isValidCoordinate(bounds.north, bounds.east)
   ) {
-    return fetchCebuCityRestaurants(signal, { forceRefresh });
+    const allRestaurants = await fetchCebuCityRestaurants(signal, { forceRefresh });
+    return {
+      allRestaurants,
+      visibleRestaurants: allRestaurants,
+    };
   }
 
   const [[cebuSouth, cebuWest], [cebuNorth, cebuEast]] = CEBU_CITY_BOUNDS;
@@ -149,7 +192,7 @@ export async function fetchRestaurantsInBounds(bounds, signal, options = {}) {
     queryCache.delete(overpassQl);
   }
 
-  const elements = await executeOverpassQuery(overpassQl, signal);
+  const elements = await executeOverpassQuery(overpassQl);
   const restaurants = normalizeRestaurants(elements);
   return {
     allRestaurants: restaurants,
@@ -159,7 +202,7 @@ export async function fetchRestaurantsInBounds(bounds, signal, options = {}) {
   };
 }
 
-export async function fetchOsmRestaurantById(id, signal) {
+export async function fetchOsmRestaurantById(id) {
   if (!isOsmRestaurantId(id)) return null;
 
   if (cebuCityMasterCache && Date.now() - cebuCityMasterCache.timestamp < CACHE_TTL_MS) {
@@ -169,7 +212,7 @@ export async function fetchOsmRestaurantById(id, signal) {
 
   const [, type, osmNumber] = id.split('-');
   const overpassQl = `[out:json][timeout:25];${type}(${osmNumber});out center tags;`;
-  const elements = await executeOverpassQuery(overpassQl, signal);
+  const elements = await executeOverpassQuery(overpassQl);
   const normalized = normalizeRestaurants(elements);
   return normalized.find((item) => item.id === id) || null;
 }

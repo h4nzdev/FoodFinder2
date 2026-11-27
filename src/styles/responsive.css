@@ -1,10 +1,11 @@
 /* ==========================================================================
    FOODFINDER — Neumorphic Responsive & Mobile Bottom-Sheet Layout
+   Consistent, touch-friendly, flexible mobile ergonomics (1024px -> 320px)
    ========================================================================== */
 
 @media (max-width: 1024px) {
   :root {
-    --discovery-sidebar-width: 420px;
+    --discovery-sidebar-width: 410px;
   }
 
   .header-edition-badge {
@@ -17,24 +18,48 @@
 }
 
 @media (max-width: 768px) {
+  :root {
+    --header-height: 60px;
+  }
+
+  /* Compact, consistent Mobile Header */
   .editorial-header-inner {
     padding: 0 12px;
+    gap: 8px;
+  }
+
+  .brand-emblem {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .brand-wordmark {
+    font-size: 1.05rem;
   }
 
   .brand-subline {
     display: none;
   }
 
-  .editorial-nav-link {
-    padding: 7px 11px;
-    font-size: 0.74rem;
+  .editorial-nav {
+    gap: 6px;
   }
 
+  .editorial-nav-link {
+    padding: 7px 10px;
+    font-size: 0.73rem;
+    border-radius: 10px;
+    gap: 5px;
+  }
+
+  /* Split-Screen transitions to Map-First + Flexible Bottom Sheet */
   .discover-split-layout {
     display: flex;
     flex-direction: column;
     position: relative;
     height: calc(100vh - var(--header-height));
+    height: calc(100dvh - var(--header-height));
   }
 
   .discover-right-map-column {
@@ -43,77 +68,228 @@
     width: 100%;
   }
 
+  /* Floating Map Toolbar on Mobile */
+  .map-floating-toolbar {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .map-toolbar-group {
+    padding: 5px 8px;
+    gap: 6px;
+    border-radius: 12px;
+  }
+
+  /* Move Zoom Dock to Top-Right on Mobile so Bottom Sheet Never Covers It */
+  .map-zoom-dock {
+    bottom: auto;
+    left: auto;
+    top: 58px;
+    right: 10px;
+  }
+
+  .map-zoom-dock .map-toolbar-group {
+    flex-direction: column;
+    padding: 5px;
+    gap: 5px;
+  }
+
+  .map-zoom-dock .map-toolbar-group span {
+    display: none;
+  }
+
+  .map-pick-banner {
+    top: 58px;
+    left: 10px;
+    right: 56px;
+    max-width: none;
+    padding: 10px 12px;
+    font-size: 0.76rem;
+  }
+
+  /* Tactile Neumorphic Bottom Sheet */
   .discover-left-column {
     order: 2;
     position: absolute;
     left: 8px;
     right: 8px;
-    bottom: 60px;
+    bottom: 62px;
     z-index: 900;
-    border-radius: var(--radius-lg);
+    border-radius: 20px;
     background-color: var(--color-background);
-    box-shadow: 0 -8px 28px rgba(45, 22, 84, 0.22);
-    border: 1px solid rgba(255, 255, 255, 0.85);
-    max-height: 52vh;
+    box-shadow: 0 -10px 30px rgba(45, 22, 84, 0.24);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
     height: auto;
-    transition: max-height 200ms ease-out;
+    max-height: 52dvh;
+    transition: max-height 220ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .discover-left-column.mobile-mode-map {
     max-height: 0;
     border: none;
+    box-shadow: none;
     overflow: hidden;
+    pointer-events: none;
   }
 
   .discover-left-column.mobile-mode-split {
-    max-height: 46vh;
+    max-height: 50dvh;
   }
 
   .discover-left-column.mobile-mode-list {
-    max-height: calc(100vh - var(--header-height) - 68px);
+    max-height: calc(100dvh - var(--header-height) - 70px);
   }
 
+  /* Mobile Sheet Grab Bar */
+  .mobile-sheet-grab-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 14px 6px;
+    border-bottom: var(--rule-thin);
+    flex-shrink: 0;
+  }
+
+  .mobile-sheet-grab-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .mobile-sheet-pill {
+    width: 38px;
+    height: 4px;
+    border-radius: 999px;
+    background-color: var(--color-primary-mid);
+    opacity: 0.45;
+    align-self: center;
+    margin-bottom: 2px;
+  }
+
+  .mobile-sheet-grab-title {
+    font-family: var(--font-serif);
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  /* Hide oversized desktop masthead inside mobile bottom sheet */
   .discover-editorial-masthead {
-    margin: 12px 12px 6px;
-    padding: 14px;
+    display: none;
   }
 
-  .discover-masthead-title {
-    font-size: 1.15rem;
+  /* Compact Search & Collapsible Filters on Mobile */
+  .discover-controls-section {
+    margin: 6px 12px;
+    padding: 10px 12px;
+    gap: 9px;
+    flex-shrink: 0;
   }
 
-  .discover-masthead-art {
-    width: 48px;
-    height: 48px;
+  .discover-controls-section .category-tabs-bar,
+  .discover-controls-section .secondary-filters-row {
+    display: none;
+  }
+
+  .discover-controls-section.mobile-filters-open .category-tabs-bar {
+    display: grid;
+  }
+
+  .discover-controls-section.mobile-filters-open .secondary-filters-row {
+    display: flex;
+  }
+
+  .discover-status-bar {
+    margin: 0 12px 4px;
+    padding: 6px 11px;
+    font-size: 0.72rem;
+    flex-shrink: 0;
+  }
+
+  .discover-scroll-pane {
+    padding: 8px 12px 20px;
+    gap: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Compact Restaurant Cards on Mobile */
+  .editorial-restaurant-item {
+    padding: 13px 14px;
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 10px;
+    border-radius: 15px;
+  }
+
+  .restaurant-index-num {
+    width: 30px;
+    height: 30px;
+    font-size: 0.76rem;
+  }
+
+  .restaurant-item-title {
+    font-size: 0.98rem;
+  }
+
+  .selected-restaurant-folio {
+    padding: 15px;
+    border-radius: 16px;
+  }
+
+  .folio-title {
+    font-size: 1.24rem;
+  }
+
+  .folio-spec-row {
+    grid-template-columns: 96px minmax(0, 1fr);
   }
 
   /* Neumorphic Mobile Bottom Mode Switcher */
   .mobile-mode-switcher {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    padding: 6px 10px;
+    gap: 7px;
+    padding: 7px 10px;
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 54px;
+    height: 56px;
     z-index: 980;
     background-color: var(--color-background);
-    box-shadow: 0 -4px 14px rgba(45, 22, 84, 0.12);
+    box-shadow: 0 -4px 16px rgba(45, 22, 84, 0.14);
+    border-top: 1px solid rgba(255, 255, 255, 0.8);
+  }
+
+  .mobile-mode-switcher.has-route {
+    grid-template-columns: repeat(4, 1fr);
   }
 
   .mobile-mode-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    font-size: 0.74rem;
+    gap: 5px;
+    font-size: 0.73rem;
     font-weight: 700;
-    border-radius: var(--radius-xs);
+    border-radius: 11px;
     background-color: var(--color-surface);
     box-shadow: var(--neu-raised-sm);
     color: var(--color-secondary);
+    min-height: 40px;
   }
 
   .mobile-mode-btn.active {
@@ -126,48 +302,133 @@
     color: var(--color-accent);
   }
 
+  /* OSRM Route Panel on Mobile */
   .osrm-route-panel {
-    left: 10px;
-    right: 10px;
+    left: 8px;
+    right: 8px;
     bottom: 64px;
     width: auto;
     max-width: none;
-    max-height: 55vh;
+    max-height: 52dvh;
+    border-radius: 18px;
+  }
+
+  .osrm-route-panel.osrm-minimized {
+    max-height: none;
+  }
+
+  .osrm-steps-list {
+    max-height: 165px;
+  }
+
+  /* Digital Menu & Owner Pages Mobile Layout */
+  .editorial-page-container {
+    padding: 18px 12px 48px;
   }
 
   .menu-broadsheet {
-    padding: 16px;
+    padding: 14px;
+    border-radius: 18px;
   }
 
   .menu-broadsheet-inner-frame {
-    padding: 16px;
+    padding: 15px;
+    border-radius: 14px;
   }
 
   .menu-broadsheet-header {
     grid-template-columns: 1fr;
+    gap: 14px;
   }
 
   .menu-broadsheet-title {
-    font-size: 1.65rem;
+    font-size: 1.55rem;
+  }
+
+  .menu-broadsheet-meta-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .editorial-card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .editorial-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
 
   .editorial-field-row {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 520px) {
+  .hide-on-mobile-compact {
+    display: none !important;
+  }
+
+  .editorial-nav-link span {
+    font-size: 0.7rem;
+  }
+
   .category-tabs-bar {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .menu-broadsheet-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
   .editorial-dish-row {
-    grid-template-columns: 72px minmax(0, 1fr);
+    grid-template-columns: 68px minmax(0, 1fr);
     gap: 12px;
+    padding: 12px;
   }
 
   .editorial-dish-photo-frame {
-    width: 72px;
-    height: 72px;
+    width: 68px;
+    height: 68px;
+  }
+
+  .editorial-dish-topline {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .editorial-dish-leader {
+    display: none;
+  }
+
+  .folio-spec-row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .folio-actions-bar .btn-editorial {
+    flex: 1 1 calc(50% - 6px);
+  }
+
+  .restaurant-item-actions .btn-editorial {
+    flex: 1 1 calc(50% - 4px);
+  }
+}
+
+@media (max-width: 380px) {
+  .brand-wordmark {
+    font-size: 0.95rem;
+  }
+
+  .editorial-nav-link {
+    padding: 6px 8px;
+  }
+
+  .mobile-mode-btn {
+    font-size: 0.68rem;
+    gap: 4px;
   }
 }

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import axios from 'axios';
 import { fetchRestaurantsInBounds } from '../services/restaurantService';
 import { fetchPublishedLocations } from '../services/ownerService';
 import { fetchPublishedMenuIds } from '../services/menuService';
@@ -25,27 +24,23 @@ export function useRestaurants() {
   const [onlyInMapView, setOnlyInMapView] = useState(true);
   const [attempt, setAttempt] = useState(0);
 
-  const abortControllerRef = useRef(null);
+  const requestIdRef = useRef(0);
   const debounceTimerRef = useRef(null);
 
   const loadRestaurantsForBounds = useCallback(async (targetBounds, forceRefresh = false) => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
+    const currentRequestId = ++requestIdRef.current;
 
     setLoading(true);
     setError('');
 
     try {
       const [overpassResult, ownerResult, menuIdsResult] = await Promise.allSettled([
-        fetchRestaurantsInBounds(targetBounds, controller.signal, { forceRefresh }),
-        fetchPublishedLocations(controller.signal),
-        fetchPublishedMenuIds(controller.signal, forceRefresh),
+        fetchRestaurantsInBounds(targetBounds, null, { forceRefresh }),
+        fetchPublishedLocations(null),
+        fetchPublishedMenuIds(null, forceRefresh),
       ]);
 
-      if (controller.signal.aborted) return;
+      if (currentRequestId !== requestIdRef.current) return;
 
       const ownerLocations = ownerResult.status === 'fulfilled' ? ownerResult.value : [];
       const publishedMenuIds =
@@ -53,17 +48,10 @@ export function useRestaurants() {
 
       if (overpassResult.status === 'rejected') {
         const reason = overpassResult.reason;
-        if (
-          axios.isCancel(reason) ||
-          reason?.name === 'CanceledError' ||
-          reason?.name === 'AbortError'
-        ) {
-          return;
-        }
         if (ownerLocations.length > 0) {
           const mergedFallback = mergeRestaurantLocations([], ownerLocations, publishedMenuIds);
           setAllRestaurants(mergedFallback);
-          setError('Overpass API is temporarily unreachable. Showing verified owner locations.');
+          setError('Overpass API is temporarily busy. Showing verified owner locations.');
         } else {
           setError(
             reason?.message ||
@@ -79,14 +67,7 @@ export function useRestaurants() {
       setAllRestaurants(merged);
       setLoading(false);
     } catch (err) {
-      if (
-        controller.signal.aborted ||
-        axios.isCancel(err) ||
-        err?.name === 'CanceledError' ||
-        err?.name === 'AbortError'
-      ) {
-        return;
-      }
+      if (currentRequestId !== requestIdRef.current) return;
       setError(err?.message || 'Unable to load restaurants right now.');
       setLoading(false);
     }
@@ -95,9 +76,6 @@ export function useRestaurants() {
   useEffect(() => {
     loadRestaurantsForBounds(DEFAULT_BOUNDS, attempt > 0);
     return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
@@ -123,14 +101,27 @@ export function useRestaurants() {
         return unchanged ? prev : nextBounds;
       });
 
+      const [[cebuSouth, cebuWest], [cebuNorth, cebuEast]] = CEBU_CITY_BOUNDS;
+      const insideCebuMaster =
+        nextBounds.north >= cebuSouth &&
+        nextBounds.south <= cebuNorth &&
+        nextBounds.east >= cebuWest &&
+        nextBounds.west <= cebuEast;
+
+      // When panning inside Cebu City and we already have the master dataset loaded,
+      // filter locally without sending redundant Overpass network requests
+      if (insideCebuMaster && allRestaurants.length > 0) {
+        return;
+      }
+
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
       debounceTimerRef.current = setTimeout(() => {
         loadRestaurantsForBounds(nextBounds, false);
-      }, 450);
+      }, 500);
     },
-    [loadRestaurantsForBounds]
+    [allRestaurants.length, loadRestaurantsForBounds]
   );
 
   const retry = useCallback(() => {

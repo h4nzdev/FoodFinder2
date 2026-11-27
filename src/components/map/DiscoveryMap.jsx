@@ -413,19 +413,20 @@ export default function DiscoveryMap({
 
         {/* Map Pin Limitation Controls to Prevent Lag */}
         <div
-          className="map-toolbar-group"
-          style={{ fontSize: '0.73rem', padding: '5px 10px', gap: '10px' }}
+          className="map-toolbar-group map-pin-cap-group"
+          style={{ fontSize: '0.73rem', padding: '5px 10px', gap: '8px' }}
         >
           <span role="status">
             {isCapped ? (
               <>
-                Showing <strong>{displayedMarkers.length}</strong> of{' '}
-                <strong>{totalInView}</strong> in view ·{' '}
-                <em style={{ color: 'var(--color-secondary)' }}>Zoom in for more</em>
+                <strong>{displayedMarkers.length}</strong>/<strong>{totalInView}</strong> pins
+                <em className="hide-on-mobile-compact" style={{ color: 'var(--color-secondary)', marginLeft: '4px' }}>
+                  · Zoom in for more
+                </em>
               </>
             ) : (
               <>
-                Showing <strong>{displayedMarkers.length}</strong> map{' '}
+                <strong>{displayedMarkers.length}</strong>{' '}
                 {displayedMarkers.length === 1 ? 'pin' : 'pins'}
               </>
             )}
@@ -435,7 +436,7 @@ export default function DiscoveryMap({
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '5px',
+              gap: '4px',
               borderLeft: 'var(--rule-thin)',
               paddingLeft: '8px',
               fontWeight: 700,
@@ -447,13 +448,14 @@ export default function DiscoveryMap({
             title="Limit maximum pins rendered on the map to prevent browser lag"
           >
             <SlidersHorizontal size={11} aria-hidden="true" />
-            <span>Pin Cap:</span>
+            <span className="hide-on-mobile-compact">Cap:</span>
             <select
               aria-label="Maximum map pins displayed"
               value={pinLimit}
               onChange={(event) => setPinLimit(Number(event.target.value))}
               style={{
                 border: 'var(--rule-thin)',
+                borderRadius: '6px',
                 backgroundColor: 'var(--color-surface)',
                 color: 'var(--color-primary)',
                 padding: '2px 4px',
@@ -463,7 +465,7 @@ export default function DiscoveryMap({
             >
               {PIN_LIMIT_OPTIONS.map((limit) => (
                 <option key={limit} value={limit}>
-                  {limit} pins
+                  {limit}
                 </option>
               ))}
             </select>
@@ -518,14 +520,7 @@ export default function DiscoveryMap({
           className="editorial-map-tiles"
         />
 
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '22px',
-            left: '14px',
-            zIndex: 800,
-          }}
-        >
+        <div className="map-zoom-dock">
           <CustomZoomControls />
         </div>
 
