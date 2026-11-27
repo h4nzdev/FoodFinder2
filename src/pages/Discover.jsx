@@ -70,6 +70,7 @@ export default function Discover() {
   const routing = useRouting(geolocation);
 
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
+  const [chatOpen, setChatOpen] = useState(false);
   const [mobileMode, setMobileMode] = useState('split'); // 'split' | 'list' | 'peek' | 'map'
   const [mobileFiltersExpanded, setMobileFiltersExpanded] = useState(false);
   const [searchCardCollapsed, setSearchCardCollapsed] = useState(false);
@@ -590,8 +591,9 @@ export default function Discover() {
         mobileMode={mobileMode}
       />
 
-      {/* Floating Groq AI food assistant with GenUI recommendation cards */}
       <FoodChatbot
+        open={chatOpen}
+        setOpen={setChatOpen}
         restaurants={allRestaurants}
         geolocation={geolocation}
         onSelectRestaurant={handleSelectRestaurant}
@@ -644,7 +646,43 @@ export default function Discover() {
             <span>Route</span>
           </button>
         )}
+        <MobileChatLauncher open={chatOpen} onOpen={() => setChatOpen(true)} />
       </nav>
     </div>
+  );
+}
+
+function MobileChatLauncher({ open, onOpen }) {
+  const start = useRef(null);
+
+  return (
+    <button
+      type="button"
+      className="mobile-mode-btn chatbot-launcher"
+      aria-label="Swipe up or tap to open SugBot"
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      onPointerDown={(event) => {
+        if (!event.isPrimary || event.button !== 0) return;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        start.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+      }}
+      onPointerUp={(event) => {
+        if (start.current?.id !== event.pointerId) return;
+        const rise = start.current.y - event.clientY;
+        const sideways = Math.abs(event.clientX - start.current.x);
+        start.current = null;
+        const tapped = Math.max(Math.abs(rise), sideways) <= 12;
+        if (tapped || (rise >= 32 && rise > sideways)) onOpen();
+      }}
+      onLostPointerCapture={() => { start.current = null; }}
+      onClick={(event) => {
+        // Keyboard and assistive activation have no pointer gesture.
+        if (event.detail === 0) onOpen();
+      }}
+    >
+      <ChevronUp size={16} aria-hidden="true" />
+      <span>SugBot</span>
+    </button>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Bot, MapPin, Navigation, Send, Sparkles, X } from 'lucide-react';
 import { askFoodBot } from '../../services/chatbotService';
 
@@ -77,8 +77,7 @@ function RecommendationCard({ rec, language, onView, onDirections }) {
   );
 }
 
-export default function FoodChatbot({ restaurants, geolocation, onSelectRestaurant, onGetDirections }) {
-  const [open, setOpen] = useState(false);
+export default function FoodChatbot({ open, setOpen, restaurants, geolocation, onSelectRestaurant, onGetDirections }) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [language, setLanguage] = useState(null); // null until user picks: 'bisaya' | 'english'
@@ -94,6 +93,38 @@ export default function FoodChatbot({ restaurants, geolocation, onSelectRestaura
   ]);
   const listRef = useRef(null);
   const abortRef = useRef(null);
+  const dialogRef = useRef(null);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const dialog = dialogRef.current;
+    const mobile = window.matchMedia('(max-width: 768px)');
+    const viewport = window.visualViewport;
+    const fitViewport = () => {
+      if (!mobile.matches || !viewport) return;
+      dialog.style.setProperty('--chat-height', `${viewport.height}px`);
+      dialog.style.setProperty('--chat-top', `${viewport.offsetTop}px`);
+    };
+    const showDialog = () => {
+      if (dialog.open) dialog.close();
+      if (mobile.matches) {
+        fitViewport();
+        dialog.showModal();
+      } else {
+        dialog.show();
+      }
+    };
+    showDialog();
+    mobile.addEventListener('change', showDialog);
+    viewport?.addEventListener('resize', fitViewport);
+    viewport?.addEventListener('scroll', fitViewport);
+    return () => {
+      mobile.removeEventListener('change', showDialog);
+      viewport?.removeEventListener('resize', fitViewport);
+      viewport?.removeEventListener('scroll', fitViewport);
+      dialog.close();
+    };
+  }, [open]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
@@ -228,7 +259,15 @@ export default function FoodChatbot({ restaurants, geolocation, onSelectRestaura
   return (
     <div className="chatbot-root">
       {open && (
-        <section className="chatbot-panel" role="dialog" aria-label="SugBot food assistant">
+        <dialog
+          ref={dialogRef}
+          className="chatbot-panel"
+          aria-label="SugBot food assistant"
+          onCancel={(event) => {
+            event.preventDefault();
+            setOpen(false);
+          }}
+        >
           <header className="chatbot-header">
             <div className="chatbot-header-title">
               <Sparkles size={15} aria-hidden="true" />
@@ -352,7 +391,7 @@ export default function FoodChatbot({ restaurants, geolocation, onSelectRestaura
               <Send size={14} aria-hidden="true" />
             </button>
           </form>
-        </section>
+        </dialog>
       )}
 
       <button

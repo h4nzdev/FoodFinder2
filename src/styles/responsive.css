@@ -322,7 +322,7 @@
   /* Neumorphic Mobile Bottom Mode Switcher */
   .mobile-mode-switcher {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 7px;
     padding: 7px 10px;
     position: absolute;
@@ -337,7 +337,7 @@
   }
 
   .mobile-mode-switcher.has-route {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .mobile-mode-btn {
@@ -430,6 +430,12 @@
 }
 
 @media (max-width: 520px) {
+  .mobile-mode-btn {
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
   .hide-on-mobile-compact {
     display: none !important;
   }
